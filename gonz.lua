@@ -2,13 +2,13 @@ local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
-local KEYS_URL = "https://raw.githubusercontent.com/hekwas/ambigonz/refs/heads/main/keys.json?token=GHSAT0AAAAAADU7ASLZKIJFB6P7WPXZ4AF62MOJDEA"
+local KEYS_URL = "https://raw.githubusercontent.com/hekwas/ambigonz/refs/heads/main/keys.json"
 local SAVE_FILE = "gonzo_cache.json"
 
 -- ===== LOCAL TOOL START FUNCTION =====
 local function StartTool()
     print("Tool started!")
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/hekwas/ambigonz/refs/heads/main/67bile.lua?token=GHSAT0AAAAAADU7ASLY4E6NOVSYAZDCJHXO2MOJEJA'))()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/hekwas/ambigonz/refs/heads/main/67bile.lua'))()
 end
 
 -- ===== CACHE =====
