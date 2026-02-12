@@ -2,7 +2,7 @@ local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
-local KEYS_URL = "https://raw.githubusercontent.com/hekwas/ambigonz/refs/heads/main/keys.json"
+local KEYS_URL = "https://raw.githubusercontent.com/hekwas/ambigonz/refs/heads/main/btmn/arkhm/jstod/keys.json"
 local SAVE_FILE = "gonzo_cache.json"
 
 -- ===== LOCAL TOOL START FUNCTION =====
