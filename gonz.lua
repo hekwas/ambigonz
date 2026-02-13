@@ -2,7 +2,7 @@ local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
-local KEYS_URL = "https://raw.githubusercontent.com/hekwas/ambigonz/refs/heads/main/btmn/arkhm/jstod/keys.json"
+local KEYS_URL = "https://raw.githubusercontent.com/hekwas/ambigonz/main/btmn/arkhm/jstod/keys.json"
 local SAVE_FILE = "gonzo_cache.json"
 
 -- ===== LOCAL TOOL START FUNCTION =====
@@ -2343,7 +2343,7 @@ if configLoaded then
 end
 end
 
--- ===== CACHE =====
+-- ===== CACHE FUNCTIONS =====
 local function save(data)
     if writefile then
         writefile(SAVE_FILE, HttpService:JSONEncode(data))
@@ -2356,19 +2356,27 @@ local function load()
     end
 end
 
+-- ===== AUTO LOGIN CHECK =====
 local saved = load()
-if saved and saved.expire and saved.expire > os.time() then
+if saved
+    and saved.expire
+    and saved.expire > os.time()
+    and saved.userId == player.UserId then
+
     StartTool()
     return
 end
 
 -- ===== UI =====
-local gui = Instance.new("ScreenGui", player.PlayerGui)
+local gui = Instance.new("ScreenGui")
+gui.Parent = player.PlayerGui
+gui.Name = "GonzoKeyUI"
 
 local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.new(0, 360, 0, 220)
 frame.Position = UDim2.new(0.5, -180, 0.5, -110)
 frame.BackgroundColor3 = Color3.fromRGB(12,12,18)
+frame.BorderSizePixel = 0
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0,14)
 
 local title = Instance.new("TextLabel", frame)
@@ -2387,6 +2395,7 @@ box.TextColor3 = Color3.fromRGB(200,0,255)
 box.PlaceholderText = "Enter Key..."
 box.Font = Enum.Font.Gotham
 box.TextSize = 14
+box.ClearTextOnFocus = false
 Instance.new("UICorner", box).CornerRadius = UDim.new(0,10)
 
 local button = Instance.new("TextButton", frame)
@@ -2397,9 +2406,20 @@ button.Text = "VERIFY"
 button.TextColor3 = Color3.new(1,1,1)
 button.Font = Enum.Font.GothamBold
 button.TextSize = 16
+button.BorderSizePixel = 0
 Instance.new("UICorner", button).CornerRadius = UDim.new(0,12)
 
+local stroke = Instance.new("UIStroke", button)
+stroke.Color = Color3.fromRGB(200,0,255)
+stroke.Thickness = 2
+
+-- ===== VERIFY LOGIC =====
 button.MouseButton1Click:Connect(function()
+
+    local enteredKey = box.Text
+    if enteredKey == "" then
+        return
+    end
 
     button.Text = "CHECKING..."
 
@@ -2415,19 +2435,39 @@ button.MouseButton1Click:Connect(function()
     end
 
     local keyTable = HttpService:JSONDecode(response)
+    local keyData = keyTable[enteredKey]
 
-    if keyTable[box.Text] then
-        save({
-            expire = os.time() + (60*60*48)
-        })
-
-        button.Text = "ACCESS GRANTED"
-        task.wait(1)
-        gui:Destroy()
-        StartTool()
-    else
+    if not keyData then
         button.Text = "INVALID KEY"
         task.wait(1)
         button.Text = "VERIFY"
+        return
     end
+
+    -- verificare lock pe user
+    local existing = load()
+    if existing 
+        and existing.key == enteredKey 
+        and existing.userId ~= player.UserId then
+
+        button.Text = "KEY LOCKED"
+        task.wait(1.5)
+        button.Text = "VERIFY"
+        return
+    end
+
+    local duration = tonumber(keyData.duration) or 0
+    local expireTime = os.time() + duration
+
+    save({
+        key = enteredKey,
+        userId = player.UserId,
+        expire = expireTime
+    })
+
+    button.Text = "ACCESS GRANTED"
+    task.wait(1)
+
+    gui:Destroy()
+    StartTool()
 end)
