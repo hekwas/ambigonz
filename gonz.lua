@@ -837,7 +837,7 @@ local progressConnection = nil
 local StealData = {}
 
 -- Discord text for progress bar
-local DISCORD_TEXT = "discord.gg/22s"
+local DISCORD_TEXT = "......"
 
 local function getDiscordProgress(percent)
     local totalChars = #DISCORD_TEXT
@@ -1729,7 +1729,7 @@ titleLabel.ZIndex = 5
 local subtitleLabel = Instance.new("TextLabel", header)
 subtitleLabel.Size = UDim2.new(1, 0, 0, 24 * guiScale)
 subtitleLabel.Position = UDim2.new(0, 0, 0, 40 * guiScale)
-subtitleLabel.BackgroundTransparency = 0
+subtitleLabel.BackgroundTransparency = 0.5
 subtitleLabel.Text = "hai la gonzo pe discord"
 subtitleLabel.TextColor3 = Color3.fromRGB(160, 0, 255)
 subtitleLabel.Font = Enum.Font.GothamBold
