@@ -1691,127 +1691,135 @@ fillGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(1, C.purpleGlow)
 }
 
+local RunService = game:GetService("RunService")
+
 -- Main Window
 local main = Instance.new("Frame", sg)
 main.Name = "GONZO HUB"
 main.Size = UDim2.new(0, 560 * guiScale, 0, 740 * guiScale)
 main.Position = isMobile and UDim2.new(0.5, -280 * guiScale, 0.5, -370 * guiScale) or UDim2.new(1, -580, 0, 20)
-main.BackgroundColor3 = Color3.fromRGB(2, 2, 4)
+main.BackgroundColor3 = C.bg
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
 main.ClipsDescendants = true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 18 * guiScale)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 20 * guiScale)
 
+-- Stroke with gradient
 local mainStroke = Instance.new("UIStroke", main)
-mainStroke.Thickness = 2
-local strokeGrad = Instance.new("UIGradient", mainStroke)
-strokeGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 170, 255)),
-    ColorSequenceKeypoint.new(0.2, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(60, 130, 255)),
-    ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 170, 255))
-})
+mainStroke.Thickness = 1.5
+mainStroke.Transparency = 0.4
 
-task.spawn(function()
-    local r = 0
-    while main.Parent do
-        r = (r + 3) % 360
-        strokeGrad.Rotation = r
-        task.wait(0.02)
-    end
+local strokeGrad = Instance.new("UIGradient", mainStroke)
+strokeGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, C.purpleLight),
+    ColorSequenceKeypoint.new(0.3, C.purpleDark),
+    ColorSequenceKeypoint.new(0.6, C.purpleGlow),
+    ColorSequenceKeypoint.new(1, C.purpleLight)
+}
+local rotation = 0
+RunService.Heartbeat:Connect(function(dt)
+    rotation = (rotation + dt * 60) % 360
+    strokeGrad.Rotation = rotation
 end)
 
+-- Particle system (optimized single loop)
+local particles = {}
 for i = 1, 60 do
     local ball = Instance.new("Frame", main)
     ball.Size = UDim2.new(0, math.random(2, 4), 0, math.random(2, 4))
-    ball.Position = UDim2.new(math.random(2, 98) / 100, 0, math.random(2, 98) / 100, 0)
-    ball.BackgroundColor3 = Color3.fromRGB(100, 170, 255)
-    ball.BackgroundTransparency = math.random(10, 40) / 100
+    ball.Position = UDim2.new(math.random(), 0, math.random(), 0)
+    ball.BackgroundColor3 = C.purpleLight
+    ball.BackgroundTransparency = math.random(10, 40)/100
     ball.BorderSizePixel = 0
     ball.ZIndex = 2
-    Instance.new("UICorner", ball).CornerRadius = UDim.new(1, 0)
-    
-    task.spawn(function()
-        local startX = ball.Position.X.Scale
-        local startY = ball.Position.Y.Scale
-        local phase = math.random() * math.pi * 2
-        local speedMult = 0.3 + math.random() * 0.4
-        while ball.Parent do
-            local t = tick() + phase
-            local newX = startX + math.sin(t * speedMult) * 0.02
-            local newY = startY + math.cos(t * speedMult * 0.8) * 0.015
-            ball.Position = UDim2.new(math.clamp(newX, 0.01, 0.99), 0, math.clamp(newY, 0.01, 0.99), 0)
-            ball.BackgroundTransparency = 0.2 + math.sin(t * 1.5 + phase) * 0.25
-            task.wait(0.03)
-        end
-    end)
+    Instance.new("UICorner", ball).CornerRadius = UDim.new(1,0)
+
+    particles[i] = {
+        frame = ball,
+        startX = ball.Position.X.Scale,
+        startY = ball.Position.Y.Scale,
+        phase = math.random() * math.pi * 2,
+        speedX = 0.3 + math.random()*0.4,
+        speedY = 0.25 + math.random()*0.35
+    }
 end
+
+RunService.Heartbeat:Connect(function()
+    local t = os.clock()
+    for _, p in ipairs(particles) do
+        local newX = p.startX + math.sin(t*p.speedX + p.phase) * 0.02
+        local newY = p.startY + math.cos(t*p.speedY + p.phase) * 0.015
+        p.frame.Position = UDim2.new(math.clamp(newX,0.01,0.99),0,math.clamp(newY,0.01,0.99),0)
+        p.frame.BackgroundTransparency = 0.2 + math.sin(t*1.5 + p.phase)*0.25
+    end
+end)
 
 -- Header
 local header = Instance.new("Frame", main)
-header.Size = UDim2.new(1, 0, 0, 70 * guiScale)
+header.Size = UDim2.new(1,0,0,70*guiScale)
 header.BackgroundTransparency = 1
 header.BorderSizePixel = 0
 header.ZIndex = 0
 
 local titleLabel = Instance.new("TextLabel", header)
-titleLabel.Size = UDim2.new(1, 0, 0, 32 * guiScale)
-titleLabel.Position = UDim2.new(0, 0, 0, 10 * guiScale)
+titleLabel.Size = UDim2.new(1,0,0,32*guiScale)
+titleLabel.Position = UDim2.new(0,0,0,10*guiScale)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Text = "GONZO HUB"
 titleLabel.TextColor3 = C.text
 titleLabel.Font = Enum.Font.GothamBlack
-titleLabel.TextSize = 28 * guiScale
+titleLabel.TextSize = 28*guiScale
 titleLabel.TextXAlignment = Enum.TextXAlignment.Center
 titleLabel.ZIndex = 5
 
 local subtitleLabel = Instance.new("TextLabel", header)
-subtitleLabel.Size = UDim2.new(1, 0, 0, 24 * guiScale)
-subtitleLabel.Position = UDim2.new(0, 0, 0, 40 * guiScale)
-subtitleLabel.BackgroundTransparency = 0
+subtitleLabel.Size = UDim2.new(1,0,0,24*guiScale)
+subtitleLabel.Position = UDim2.new(0,0,0,40*guiScale)
+subtitleLabel.BackgroundTransparency = 1
 subtitleLabel.Text = "hai la gonzo pe discord"
-subtitleLabel.TextColor3 = Color3.fromRGB(160, 0, 255)
+subtitleLabel.TextColor3 = C.purpleGlow
 subtitleLabel.Font = Enum.Font.GothamBold
-subtitleLabel.TextSize = 16 * guiScale
+subtitleLabel.TextSize = 16*guiScale
 subtitleLabel.TextXAlignment = Enum.TextXAlignment.Center
 subtitleLabel.ZIndex = 5
 
 local closeBtn = Instance.new("TextButton", header)
-closeBtn.Size = UDim2.new(0, 36 * guiScale, 0, 36 * guiScale)
-closeBtn.Position = UDim2.new(1, -46 * guiScale, 0.5, -18 * guiScale)
+closeBtn.Size = UDim2.new(0,36*guiScale,0,36*guiScale)
+closeBtn.Position = UDim2.new(1,-46*guiScale,0.5,-18*guiScale)
 closeBtn.BackgroundTransparency = 1
 closeBtn.Text = "×"
 closeBtn.TextColor3 = C.textDim
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 24 * guiScale
+closeBtn.TextSize = 24*guiScale
 closeBtn.ZIndex = 5
 
 closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
 closeBtn.MouseEnter:Connect(function() closeBtn.TextColor3 = C.danger end)
 closeBtn.MouseLeave:Connect(function() closeBtn.TextColor3 = C.textDim end)
 
+-- Side Panels
 local leftSide = Instance.new("Frame", main)
-leftSide.Size = UDim2.new(0.48, 0, 0, 650 * guiScale)
-leftSide.Position = UDim2.new(0.01, 0, 0, 75 * guiScale)
+leftSide.Size = UDim2.new(0.48,0,0,650*guiScale)
+leftSide.Position = UDim2.new(0.01,0,0,75*guiScale)
 leftSide.BackgroundTransparency = 1
 leftSide.BorderSizePixel = 0
 leftSide.ClipsDescendants = true
 leftSide.ZIndex = 2
 
 local rightSide = Instance.new("Frame", main)
-rightSide.Size = UDim2.new(0.48, 0, 0, 650 * guiScale)
-rightSide.Position = UDim2.new(0.51, 0, 0, 75 * guiScale)
+rightSide.Size = UDim2.new(0.48,0,0,650*guiScale)
+rightSide.Position = UDim2.new(0.51,0,0,75*guiScale)
 rightSide.BackgroundTransparency = 1
 rightSide.BorderSizePixel = 0
 rightSide.ClipsDescendants = true
 rightSide.ZIndex = 2
 
+-- Tables for UI elements
 VisualSetters = {}
-local SliderSetters = {}
-local KeyButtons = {}
-local waitingForKeybind = nil
+SliderSetters = {}
+KeyButtons = {}
+waitingForKeybind = nil
 
 -- CLEAN TOGGLE WITH KEYBIND - No box, just text, key button and switch - SPACED OUT
 local function createToggleWithKey(parent, yPos, labelText, keybindKey, enabledKey, callback, specialColor)
