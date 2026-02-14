@@ -1512,19 +1512,39 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 local guiScale = isMobile and 0.4 or 1
 
 local C = {
-    bg = Color3.fromRGB(2, 2, 4),
-    purple = Color3.fromRGB(60, 130, 255),
-    purpleLight = Color3.fromRGB(100, 170, 255),
-    purpleDark = Color3.fromRGB(30, 80, 200),
-    purpleGlow = Color3.fromRGB(80, 150, 255),
-    accent = Color3.fromRGB(60, 130, 255),
-    text = Color3.fromRGB(255, 255, 255),
-    textDim = Color3.fromRGB(100, 170, 255),
-    success = Color3.fromRGB(34, 197, 94),
-    danger = Color3.fromRGB(239, 68, 68),
-    border = Color3.fromRGB(30, 60, 120)
-}
+    -- background general (moody dark purple)
+    bg = Color3.fromRGB(14, 8, 24),
 
+    -- purple principal (deep neon violet)
+    purple = Color3.fromRGB(145, 60, 255),
+
+    -- highlight mai luminos
+    purpleLight = Color3.fromRGB(190, 120, 255),
+
+    -- shadow purple pentru stroke / depth
+    purpleDark = Color3.fromRGB(55, 15, 110),
+
+    -- glow chromatic (magenta vibrant)
+    purpleGlow = Color3.fromRGB(220, 80, 255),
+
+    -- accent general UI
+    accent = Color3.fromRGB(170, 70, 255),
+
+    -- text principal (soft white rece)
+    text = Color3.fromRGB(240, 240, 255),
+
+    -- text secondary (lavender)
+    textDim = Color3.fromRGB(170, 150, 220),
+
+    -- success neon modern (nu verde murdar)
+    success = Color3.fromRGB(70, 255, 140),
+
+    -- danger modern (roz-roșu vibrant)
+    danger = Color3.fromRGB(255, 70, 120),
+
+    -- border subtil pentru UIStroke
+    border = Color3.fromRGB(70, 30, 120)
+}
 local sg = Instance.new("ScreenGui")
 sg.Name = "GONZO_HUB"
 sg.ResetOnSpawn = false
@@ -1545,54 +1565,67 @@ end
 local progressBar = Instance.new("Frame", sg)
 progressBar.Size = UDim2.new(0, 420 * guiScale, 0, 56 * guiScale)
 progressBar.Position = UDim2.new(0.5, -210 * guiScale, 1, -168 * guiScale)
-progressBar.BackgroundColor3 = Color3.fromRGB(2, 2, 4)
+progressBar.BackgroundColor3 = Color3.fromRGB(14, 8, 24)
 progressBar.BorderSizePixel = 0
 progressBar.ClipsDescendants = true
 Instance.new("UICorner", progressBar).CornerRadius = UDim.new(0, 14 * guiScale)
 
 local pStroke = Instance.new("UIStroke", progressBar)
-pStroke.Thickness = 2
-local pGrad = Instance.new("UIGradient", pStroke)
-pGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 170, 255)),
-    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(60, 130, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
-})
+pStroke.Thickness = 1.5
+pStroke.Color = C.purpleDark
+pStroke.Transparency = 0.4
 
-task.spawn(function()
-    local r = 0
-    while progressBar.Parent do
-        r = (r + 3) % 360
-        pGrad.Rotation = r
-        task.wait(0.02)
-    end
-end)
+local pGrad = Instance.new("UIGradient", pStroke)
+pGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, C.purpleLight),
+    ColorSequenceKeypoint.new(0.5, C.purpleGlow),
+    ColorSequenceKeypoint.new(1, C.purple)
+}
+
+-- Animated particles (optimized single loop)
+local balls = {}
 
 for i = 1, 12 do
-    local ball = Instance.new("Frame", progressBar)
+    local ball = Instance.new("Frame")
     ball.Size = UDim2.new(0, math.random(2, 3), 0, math.random(2, 3))
-    ball.Position = UDim2.new(math.random(3, 97) / 100, 0, math.random(15, 85) / 100, 0)
-    ball.BackgroundColor3 = Color3.fromRGB(100, 170, 255)
-    ball.BackgroundTransparency = math.random(20, 50) / 100
+    ball.Position = UDim2.new(math.random(), 0, math.random(), 0)
+    ball.BackgroundColor3 = C.purpleLight
+    ball.BackgroundTransparency = math.random(30, 60) / 100
     ball.BorderSizePixel = 0
     ball.ZIndex = 1
+    ball.Parent = progressBar
     Instance.new("UICorner", ball).CornerRadius = UDim.new(1, 0)
-    
-    task.spawn(function()
-        local startX = ball.Position.X.Scale
-        local startY = ball.Position.Y.Scale
-        local phase = math.random() * math.pi * 2
-        while ball.Parent do
-            local t = tick() + phase
-            local newX = startX + math.sin(t * (0.5 + i * 0.1)) * 0.03
-            local newY = startY + math.cos(t * (0.4 + i * 0.08)) * 0.05
-            ball.Position = UDim2.new(math.clamp(newX, 0.02, 0.98), 0, math.clamp(newY, 0.1, 0.9), 0)
-            ball.BackgroundTransparency = 0.3 + math.sin(t * 2) * 0.2
-            task.wait(0.03)
-        end
-    end)
+
+    balls[i] = {
+        frame = ball,
+        startX = ball.Position.X.Scale,
+        startY = ball.Position.Y.Scale,
+        phase = math.random() * math.pi * 2,
+        speedX = 0.4 + i * 0.05,
+        speedY = 0.3 + i * 0.04
+    }
 end
+
+local rotation = 0
+
+RunService.Heartbeat:Connect(function(dt)
+    rotation = (rotation + dt * 60) % 360
+    pGrad.Rotation = rotation
+
+    local t = os.clock()
+
+    for _, data in ipairs(balls) do
+        local newX = data.startX + math.sin(t * data.speedX + data.phase) * 0.03
+        local newY = data.startY + math.cos(t * data.speedY + data.phase) * 0.05
+
+        data.frame.Position = UDim2.new(
+            math.clamp(newX, 0.02, 0.98), 0,
+            math.clamp(newY, 0.1, 0.9), 0
+        )
+
+        data.frame.BackgroundTransparency = 0.4 + math.sin(t * 2) * 0.15
+    end
+end)
 
 ProgressLabel = Instance.new("TextLabel", progressBar)
 ProgressLabel.Size = UDim2.new(0.35, 0, 0.5, 0)
@@ -1609,7 +1642,7 @@ ProgressPercentLabel = Instance.new("TextLabel", progressBar)
 ProgressPercentLabel.Size = UDim2.new(1, 0, 0.5, 0)
 ProgressPercentLabel.BackgroundTransparency = 1
 ProgressPercentLabel.Text = ""
-ProgressPercentLabel.TextColor3 = Color3.fromRGB(160, 0, 255)
+ProgressPercentLabel.TextColor3 = C.purpleGlow
 ProgressPercentLabel.Font = Enum.Font.GothamBlack
 ProgressPercentLabel.TextSize = 18 * guiScale
 ProgressPercentLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -1618,7 +1651,7 @@ ProgressPercentLabel.ZIndex = 3
 RadiusInput = Instance.new("TextBox", progressBar)
 RadiusInput.Size = UDim2.new(0, 40 * guiScale, 0, 22 * guiScale)
 RadiusInput.Position = UDim2.new(1, -50 * guiScale, 0, 2 * guiScale)
-RadiusInput.BackgroundColor3 = Color3.fromRGB(5, 5, 8)
+RadiusInput.BackgroundColor3 = Color3.fromRGB(20, 10, 40)
 RadiusInput.Text = tostring(Values.STEAL_RADIUS)
 RadiusInput.TextColor3 = C.purpleLight
 RadiusInput.Font = Enum.Font.GothamBold
@@ -1637,15 +1670,26 @@ end)
 local pTrack = Instance.new("Frame", progressBar)
 pTrack.Size = UDim2.new(0.94, 0, 0, 8 * guiScale)
 pTrack.Position = UDim2.new(0.03, 0, 1, -15 * guiScale)
-pTrack.BackgroundColor3 = Color3.fromRGB(5, 5, 8)
+pTrack.BackgroundColor3 = Color3.fromRGB(18, 10, 35)
 pTrack.ZIndex = 2
 Instance.new("UICorner", pTrack).CornerRadius = UDim.new(1, 0)
+
+local trackStroke = Instance.new("UIStroke", pTrack)
+trackStroke.Color = C.purpleDark
+trackStroke.Thickness = 1
+trackStroke.Transparency = 0.5
 
 ProgressBarFill = Instance.new("Frame", pTrack)
 ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
 ProgressBarFill.BackgroundColor3 = C.purple
 ProgressBarFill.ZIndex = 2
 Instance.new("UICorner", ProgressBarFill).CornerRadius = UDim.new(1, 0)
+
+local fillGrad = Instance.new("UIGradient", ProgressBarFill)
+fillGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, C.purple),
+    ColorSequenceKeypoint.new(1, C.purpleGlow)
+}
 
 -- Main Window
 local main = Instance.new("Frame", sg)
@@ -1726,7 +1770,7 @@ titleLabel.ZIndex = 5
 local subtitleLabel = Instance.new("TextLabel", header)
 subtitleLabel.Size = UDim2.new(1, 0, 0, 24 * guiScale)
 subtitleLabel.Position = UDim2.new(0, 0, 0, 40 * guiScale)
-subtitleLabel.BackgroundTransparency = 0.5
+subtitleLabel.BackgroundTransparency = 0
 subtitleLabel.Text = "hai la gonzo pe discord"
 subtitleLabel.TextColor3 = Color3.fromRGB(160, 0, 255)
 subtitleLabel.Font = Enum.Font.GothamBold
