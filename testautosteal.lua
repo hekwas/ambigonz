@@ -1727,7 +1727,7 @@ RunService.Heartbeat:Connect(function(dt)
 end)
 
 -- Particule G + stele animate
-local particleSymbols = {"G", "★"}
+local particleSymbols = {"G", "★" , "HEKWAS"}
 local particles = {}
 
 for i = 1, 40 do
