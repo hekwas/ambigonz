@@ -2,15 +2,12 @@ local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
-local KEYS_URL = "https://raw.githubusercontent.com/hekwas/ambigonz/main/btmn/arkhm/jstod/keys.json"
+local KEYS_URL = "https://raw.githubusercontent.com/hekwas/ambigonz/main/keys.json"
 local SAVE_FILE = "gonzo_cache.json"
 
 -- ===== LOCAL TOOL START FUNCTION =====
 local function StartTool()
-   -- ============================================================
--- 22S DUELS - BLUE EDITION + FAST ESP
--- discord.gg/22s
--- ============================================================
+
 
 repeat task.wait() until game:IsLoaded()
 
@@ -1307,7 +1304,7 @@ createScriptUserESP = function(playerName)
         textLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
         textLabel.TextStrokeColor3 = Color3.fromRGB(139, 0, 0)
     else
-        textLabel.Text = "using 22s duels"
+        textLabel.Text = "using gonzohub"
         textLabel.TextColor3 = Color3.fromRGB(60, 130, 255)
         textLabel.TextStrokeColor3 = Color3.fromRGB(10, 30, 80)
     end
