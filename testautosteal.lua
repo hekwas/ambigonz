@@ -1693,6 +1693,8 @@ fillGrad.Color = ColorSequence.new{
 
 local RunService = game:GetService("RunService")
 
+local RunService = game:GetService("RunService")
+
 -- Main Window
 local main = Instance.new("Frame", sg)
 main.Name = "GONZO HUB"
@@ -1705,7 +1707,7 @@ main.Draggable = true
 main.ClipsDescendants = true
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 20 * guiScale)
 
--- Stroke with gradient
+-- Stroke gradient
 local mainStroke = Instance.new("UIStroke", main)
 mainStroke.Thickness = 1.5
 mainStroke.Transparency = 0.4
@@ -1717,31 +1719,39 @@ strokeGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0.6, C.purpleGlow),
     ColorSequenceKeypoint.new(1, C.purpleLight)
 }
+
 local rotation = 0
 RunService.Heartbeat:Connect(function(dt)
     rotation = (rotation + dt * 60) % 360
     strokeGrad.Rotation = rotation
 end)
 
--- Particle system (optimized single loop)
+-- Particule G + stele animate
+local particleSymbols = {"G", "★"}
 local particles = {}
-for i = 1, 60 do
-    local ball = Instance.new("Frame", main)
-    ball.Size = UDim2.new(0, math.random(2, 4), 0, math.random(2, 4))
+
+for i = 1, 40 do
+    local symbol = particleSymbols[math.random(1, #particleSymbols)]
+    local ball = Instance.new("TextLabel", main)
+    ball.Text = symbol
+    ball.Size = UDim2.new(0, 12 * guiScale, 0, 12 * guiScale)
     ball.Position = UDim2.new(math.random(), 0, math.random(), 0)
-    ball.BackgroundColor3 = C.purpleLight
-    ball.BackgroundTransparency = math.random(10, 40)/100
+    ball.TextColor3 = C.purpleLight
+    ball.TextTransparency = math.random(10, 40)/100
+    ball.BackgroundTransparency = 1
     ball.BorderSizePixel = 0
     ball.ZIndex = 2
-    Instance.new("UICorner", ball).CornerRadius = UDim.new(1,0)
+    ball.Font = Enum.Font.GothamBlack
+    ball.TextSize = 14 * guiScale
+    ball.TextStrokeTransparency = 0.7
 
     particles[i] = {
         frame = ball,
         startX = ball.Position.X.Scale,
         startY = ball.Position.Y.Scale,
         phase = math.random() * math.pi * 2,
-        speedX = 0.3 + math.random()*0.4,
-        speedY = 0.25 + math.random()*0.35
+        speedX = 0.2 + math.random()*0.4,
+        speedY = 0.2 + math.random()*0.35
     }
 end
 
@@ -1751,7 +1761,10 @@ RunService.Heartbeat:Connect(function()
         local newX = p.startX + math.sin(t*p.speedX + p.phase) * 0.02
         local newY = p.startY + math.cos(t*p.speedY + p.phase) * 0.015
         p.frame.Position = UDim2.new(math.clamp(newX,0.01,0.99),0,math.clamp(newY,0.01,0.99),0)
-        p.frame.BackgroundTransparency = 0.2 + math.sin(t*1.5 + p.phase)*0.25
+        -- pulsating glow effect
+        local glow = 0.3 + (math.sin(t*2 + p.phase)*0.2)
+        p.frame.TextTransparency = math.clamp(glow,0,1)
+        p.frame.TextColor3 = C.purpleLight:Lerp(C.purpleGlow, (math.sin(t*2+p.phase)+1)/2)
     end
 end)
 
@@ -1793,7 +1806,6 @@ closeBtn.TextColor3 = C.textDim
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 24*guiScale
 closeBtn.ZIndex = 5
-
 closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
 closeBtn.MouseEnter:Connect(function() closeBtn.TextColor3 = C.danger end)
 closeBtn.MouseLeave:Connect(function() closeBtn.TextColor3 = C.textDim end)
