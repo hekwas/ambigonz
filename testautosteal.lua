@@ -783,13 +783,22 @@ end
 
 local function startAutoSteal()
     if Connections.autoSteal then return end
+    
+    local lastCheck = 0
+    local CHECK_INTERVAL = 0.1 -- 100ms (de 10 ori/secunda)
+
     Connections.autoSteal = RunService.Heartbeat:Connect(function()
         if not Enabled.AutoSteal or isStealing then return end
+        
+        if tick() - lastCheck < CHECK_INTERVAL then return end
+        lastCheck = tick()
+
         local p, _, n = findNearestPrompt()
-        if p then executeSteal(p, n) end
+        if p then
+            executeSteal(p, n)
+        end
     end)
 end
-
 local function stopAutoSteal()
     if Connections.autoSteal then
         Connections.autoSteal:Disconnect()
@@ -1352,17 +1361,38 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 local guiScale = isMobile and 0.4 or 1
 
 local C = {
-    bg = Color3.fromRGB(2, 2, 4),
-    purple = Color3.fromRGB(60, 130, 255),
-    purpleLight = Color3.fromRGB(100, 170, 255),
-    purpleDark = Color3.fromRGB(30, 80, 200),
-    purpleGlow = Color3.fromRGB(80, 150, 255),
-    accent = Color3.fromRGB(60, 130, 255),
-    text = Color3.fromRGB(255, 255, 255),
-    textDim = Color3.fromRGB(100, 170, 255),
-    success = Color3.fromRGB(34, 197, 94),
-    danger = Color3.fromRGB(239, 68, 68),
-    border = Color3.fromRGB(30, 60, 120)
+    -- fundal principal (dark cinematic)
+    bg = Color3.fromRGB(10, 6, 18),
+
+    -- violet principal (electric purple)
+    purple = Color3.fromRGB(145, 60, 255),
+
+    -- highlight neon
+    purpleLight = Color3.fromRGB(190, 120, 255),
+
+    -- deep shadow purple
+    purpleDark = Color3.fromRGB(55, 15, 110),
+
+    -- glow chromatic (roz-magenta)
+    purpleGlow = Color3.fromRGB(220, 80, 255),
+
+    -- accent principal UI
+    accent = Color3.fromRGB(170, 70, 255),
+
+    -- text principal
+    text = Color3.fromRGB(240, 240, 255),
+
+    -- text secondary (soft lavender)
+    textDim = Color3.fromRGB(170, 150, 220),
+
+    -- success (neon green modern)
+    success = Color3.fromRGB(70, 255, 140),
+
+    -- danger (vivid red modern)
+    danger = Color3.fromRGB(255, 70, 120),
+
+    -- border dark glossy
+    border = Color3.fromRGB(45, 20, 80)
 }
 
 local sg = Instance.new("ScreenGui")
@@ -1491,14 +1521,44 @@ Instance.new("UICorner", ProgressBarFill).CornerRadius = UDim.new(1, 0)
 local main = Instance.new("Frame", sg)
 main.Name = "GONZO HUB"
 main.Size = UDim2.new(0, 560 * guiScale, 0, 740 * guiScale)
-main.Position = isMobile and UDim2.new(0.5, -280 * guiScale, 0.5, -370 * guiScale) or UDim2.new(1, -580, 0, 20)
-main.BackgroundColor3 = Color3.fromRGB(2, 2, 4)
+main.Position = isMobile 
+    and UDim2.new(0.5, -280 * guiScale, 0.5, -370 * guiScale) 
+    or UDim2.new(1, -580, 0, 20)
+
+main.BackgroundColor3 = Color3.fromRGB(14, 8, 24) -- dark purple, nu negru pur
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
 main.ClipsDescendants = true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 18 * guiScale)
 
+local corner = Instance.new("UICorner", main)
+corner.CornerRadius = UDim.new(0, 20 * guiScale)
+
+-- 🔮 Soft Gradient
+local gradient = Instance.new("UIGradient", main)
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 12, 40)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 6, 20))
+}
+gradient.Rotation = 90
+
+-- 💎 Stroke modern
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = Color3.fromRGB(120, 70, 255)
+stroke.Thickness = 1.2
+stroke.Transparency = 0.4
+
+-- 🌌 Shadow Layer
+local shadow = Instance.new("Frame", sg)
+shadow.Size = main.Size + UDim2.new(0, 20, 0, 20)
+shadow.Position = main.Position + UDim2.new(0, -10, 0, -10)
+shadow.BackgroundColor3 = Color3.fromRGB(120, 70, 255)
+shadow.BackgroundTransparency = 0.85
+shadow.ZIndex = main.ZIndex - 1
+shadow.BorderSizePixel = 0
+
+local shadowCorner = Instance.new("UICorner", shadow)
+shadowCorner.CornerRadius = UDim.new(0, 24 * guiScale)
 local mainStroke = Instance.new("UIStroke", main)
 mainStroke.Thickness = 2
 local strokeGrad = Instance.new("UIGradient", mainStroke)
