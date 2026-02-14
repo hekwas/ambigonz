@@ -783,22 +783,13 @@ end
 
 local function startAutoSteal()
     if Connections.autoSteal then return end
-    
-    local lastCheck = 0
-    local CHECK_INTERVAL = 0.1 -- 100ms (de 10 ori/secunda)
-
     Connections.autoSteal = RunService.Heartbeat:Connect(function()
         if not Enabled.AutoSteal or isStealing then return end
-        
-        if tick() - lastCheck < CHECK_INTERVAL then return end
-        lastCheck = tick()
-
         local p, _, n = findNearestPrompt()
-        if p then
-            executeSteal(p, n)
-        end
+        if p then executeSteal(p, n) end
     end)
 end
+
 local function stopAutoSteal()
     if Connections.autoSteal then
         Connections.autoSteal:Disconnect()
