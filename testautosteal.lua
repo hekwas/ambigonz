@@ -111,6 +111,28 @@ end)
 
 -- Save Config
 local function SaveConfig()
+    local data = {}
+    for k, v in pairs(Enabled) do
+        data[k] = v
+    end
+    for k, v in pairs(Values) do
+        data[k] = v
+    end
+    data.KEY_SPEED = KEYBINDS.SPEED.Name
+    data.KEY_SPIN = KEYBINDS.SPIN.Name
+    data.KEY_GALAXY = KEYBINDS.GALAXY.Name
+    data.KEY_BATAIMBOT = KEYBINDS.BATAIMBOT.Name
+    data.KEY_AUTOLEFT = KEYBINDS.AUTOLEFT.Name
+    data.KEY_AUTORIGHT = KEYBINDS.AUTORIGHT.Name
+    
+    local success = false
+    if writefile then
+        pcall(function()
+            writefile(ConfigFileName, HttpService:JSONEncode(data))
+            success = true
+        end)
+    end
+    return success
 end
 
 local Connections = {}
@@ -130,15 +152,74 @@ local REMOTE_EVENT_ID = "352aad58-c786-4998-886b-3e4fa390721e"
 local BALLOON_REMOTE = ReplicatedStorage:FindFirstChild(REMOTE_EVENT_ID, true)
 
 local function INSTANT_NUKE(target)
+    if not BALLOON_REMOTE or not target then return end
+    for _, p in ipairs({"balloon", "ragdoll", "jumpscare", "morph", "tiny", "rocket", "inverse", "jail"}) do
+        BALLOON_REMOTE:FireServer(ADMIN_KEY, target, p)
+    end
 end
 
 local function getNearestPlayer()
+    local c = Player.Character
+    if not c then return nil end
+    local h = c:FindFirstChild("HumanoidRootPart")
+    if not h then return nil end
+    local pos = h.Position
+    local nearest = nil
+    local dist = math.huge
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= Player and p.Character then
+            local oh = p.Character:FindFirstChild("HumanoidRootPart")
+            if oh then
+                local d = (pos - oh.Position).Magnitude
+                if d < dist then
+                    dist = d
+                    nearest = p
+                end
+            end
+        end
+    end
+    return nearest
 end
 
 local function findBat()
+    local c = Player.Character
+    if not c then return nil end
+    local bp = Player:FindFirstChildOfClass("Backpack")
+    for _, ch in ipairs(c:GetChildren()) do
+        if ch:IsA("Tool") and ch.Name:lower():find("bat") then
+            return ch
+        end
+    end
+    if bp then
+        for _, ch in ipairs(bp:GetChildren()) do
+            if ch:IsA("Tool") and ch.Name:lower():find("bat") then
+                return ch
+            end
+        end
+    end
+    for _, i in ipairs(SlapList) do
+        local t = c:FindFirstChild(i[2]) or (bp and bp:FindFirstChild(i[2]))
+        if t then return t end
+    end
+    return nil
 end
 
 local function startSpamBat()
+    if Connections.spamBat then return end
+    Connections.spamBat = RunService.Heartbeat:Connect(function()
+        if not Enabled.SpamBat then return end
+        local c = Player.Character
+        if not c then return end
+        local bat = findBat()
+        if not bat then return end
+        if bat.Parent ~= c then
+            bat.Parent = c
+        end
+        local now = tick()
+        if now - lastBatSwing < BAT_SWING_COOLDOWN then return end
+        lastBatSwing = now
+        pcall(function() bat:Activate() end)
+    end)
 end
 
 local function stopSpamBat()
@@ -151,9 +232,32 @@ end
 local spinBAV = nil
 
 local function startSpinBot()
+    local c = Player.Character
+    if not c then return end
+    local hrp = c:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    if spinBAV then spinBAV:Destroy() spinBAV = nil end
+    for _, v in pairs(hrp:GetChildren()) do
+        if v.Name == "SpinBAV" then v:Destroy() end
+    end
+    spinBAV = Instance.new("BodyAngularVelocity")
+    spinBAV.Name = "SpinBAV"
+    spinBAV.MaxTorque = Vector3.new(0, math.huge, 0)
+    spinBAV.AngularVelocity = Vector3.new(0, Values.SpinSpeed, 0)
+    spinBAV.Parent = hrp
 end
 
 local function stopSpinBot()
+    if spinBAV then spinBAV:Destroy() spinBAV = nil end
+    local c = Player.Character
+    if c then
+        local hrp = c:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            for _, v in pairs(hrp:GetChildren()) do
+                if v.Name == "SpinBAV" then v:Destroy() end
+            end
+        end
+    end
 end
 
 -- ================================================================
@@ -197,9 +301,49 @@ local function findNearestEnemy(myHRP)
 end
 
 local function startBatAimbot()
+    if Connections.batAimbot then return end
+    
+    Connections.batAimbot = RunService.Heartbeat:Connect(function(dt)
+        if not Enabled.BatAimbot then return end
+        local c = Player.Character
+        if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart")
+        local hum = c:FindFirstChildOfClass("Humanoid")
+        if not h or not hum then return end
+        
+        -- Equip bat if not equipped (no swinging)
+        local bat = findBat()
+        if bat and bat.Parent ~= c then
+            hum:EquipTool(bat)
+        end
+        
+        -- Find target
+        local target, dist, torso = findNearestEnemy(h)
+        aimbotTarget = torso or target
+        
+        if target and torso then
+            local dir = (torso.Position - h.Position)
+            local flatDir = Vector3.new(dir.X, 0, dir.Z)
+            local flatDist = flatDir.Magnitude
+            local spd = 55 -- Fixed aimbot speed
+            
+            if flatDist > 1.5 then
+                local moveDir = flatDir.Unit
+                h.AssemblyLinearVelocity = Vector3.new(moveDir.X * spd, h.AssemblyLinearVelocity.Y, moveDir.Z * spd)
+            else
+                local tv = target.AssemblyLinearVelocity
+                h.AssemblyLinearVelocity = Vector3.new(tv.X, h.AssemblyLinearVelocity.Y, tv.Z)
+            end
+        end
+    end)
 end
 
 local function stopBatAimbot()
+    if Connections.batAimbot then
+        Connections.batAimbot:Disconnect()
+        Connections.batAimbot = nil
+    end
+    aimbotTarget = nil
 end
 
 
@@ -237,6 +381,22 @@ Player.CharacterAdded:Connect(function(char)
 end)
 
 local function setupGalaxyForce()
+    pcall(function()
+        local c = Player.Character
+        if not c then return end
+        local h = c:FindFirstChild("HumanoidRootPart")
+        if not h then return end
+        if galaxyVectorForce then galaxyVectorForce:Destroy() end
+        if galaxyAttachment then galaxyAttachment:Destroy() end
+        galaxyAttachment = Instance.new("Attachment")
+        galaxyAttachment.Parent = h
+        galaxyVectorForce = Instance.new("VectorForce")
+        galaxyVectorForce.Attachment0 = galaxyAttachment
+        galaxyVectorForce.ApplyAtCenterOfMass = true
+        galaxyVectorForce.RelativeTo = Enum.ActuatorRelativeTo.World
+        galaxyVectorForce.Force = Vector3.new(0, 0, 0)
+        galaxyVectorForce.Parent = h
+    end)
 end
 
 local function updateGalaxyForce()
@@ -1352,6 +1512,317 @@ local isMobile = UserInputService.TouchEnabled and not UserInputService.Keyboard
 local guiScale = isMobile and 0.4 or 1
 
 local C = {
+    -- background general (moody dark purple)
+    bg = Color3.fromRGB(14, 8, 24),
+
+    -- purple principal (deep neon violet)
+    purple = Color3.fromRGB(145, 60, 255),
+
+    -- highlight mai luminos
+    purpleLight = Color3.fromRGB(190, 120, 255),
+
+    -- shadow purple pentru stroke / depth
+    purpleDark = Color3.fromRGB(55, 15, 110),
+
+    -- glow chromatic (magenta vibrant)
+    purpleGlow = Color3.fromRGB(220, 80, 255),
+
+    -- accent general UI
+    accent = Color3.fromRGB(170, 70, 255),
+
+    -- text principal (soft white rece)
+    text = Color3.fromRGB(240, 240, 255),
+
+    -- text secondary (lavender)
+    textDim = Color3.fromRGB(170, 150, 220),
+
+    -- success neon modern (nu verde murdar)
+    success = Color3.fromRGB(70, 255, 140),
+
+    -- danger modern (roz-roșu vibrant)
+    danger = Color3.fromRGB(255, 70, 120),
+
+    -- border subtil pentru UIStroke
+    border = Color3.fromRGB(70, 30, 120)
+}
+local sg = Instance.new("ScreenGui")
+sg.Name = "GONZO_HUB"
+sg.ResetOnSpawn = false
+sg.Parent = Player.PlayerGui
+
+local function playSound(id, vol, spd)
+    pcall(function()
+        local s = Instance.new("Sound", SoundService)
+        s.SoundId = id
+        s.Volume = vol or 0.3
+        s.PlaybackSpeed = spd or 1
+        s:Play()
+        game:GetService("Debris"):AddItem(s, 1)
+    end)
+end
+
+
+
+Upgrade
+You said:
+cum pot face aceasta executie mult mai rapida , in joc e un delay de 2-5 secunde : local function startAutoSteal()
+    if Connections.autoSteal then return end
+    Connections.autoSteal = RunService.Heartbeat:Connect(function()
+        if not Enabled.AutoSteal or isStealing then return end
+        local p, _, n = findNearestPrompt()
+        if p then executeSteal(p, n) end
+    end)
+end
+
+ChatGPT said:
+Delay-ul de 2–5 secunde nu vine, de obicei, din Heartbeat în sine, ci din:
+
+cât de des scanezi obiectele
+
+cât de grea este findNearestPrompt()
+
+ce face executeSteal() (yield, wait, fireproximityprompt etc.)
+
+Hai să optimizăm pe zone.
+
+🔎 1. Nu scana la fiecare Heartbeat (≈60 fps)
+Acum codul rulează la ~60 apeluri/secundă.
+Dacă findNearestPrompt() iterează prin workspace, e costisitor.
+
+Variantă optimizată – throttling (interval fix)
+local function startAutoSteal()
+    if Connections.autoSteal then return end
+    
+    local lastCheck = 0
+    local CHECK_INTERVAL = 0.1 -- 100ms (de 10 ori/secunda)
+
+    Connections.autoSteal = RunService.Heartbeat:Connect(function()
+        if not Enabled.AutoSteal or isStealing then return end
+        
+        if tick() - lastCheck < CHECK_INTERVAL then return end
+        lastCheck = tick()
+
+        local p, _, n = findNearestPrompt()
+        if p then
+            executeSteal(p, n)
+        end
+    end)
+end
+✔ Scade lag-ul
+✔ Reduce load pe client
+✔ Execuție mai stabilă
+
+🔎 2. Problema reală poate fi în findNearestPrompt()
+Dacă faci ceva de genul:
+
+for _, v in pairs(workspace:GetDescendants()) do
+→ asta e EXTREM de lent.
+
+Variantă profesională:
+Cache prompts o singură dată.
+
+local Prompts = {}
+
+for _, v in ipairs(workspace:GetDescendants()) do
+    if v:IsA("ProximityPrompt") then
+        table.insert(Prompts, v)
+    end
+end
+Apoi findNearestPrompt() caută doar în Prompts, nu în tot workspace-ul.
+
+Asta singură poate elimina 90% din delay.
+
+🔎 3. Evită yield în executeSteal()
+Dacă folosești:
+
+wait()
+task.wait()
+prompt:InputHoldBegin()
+wait(1)
+prompt:InputHoldEnd()
+→ asta introduce delay real.
+
+Folosește:
+fireproximityprompt(prompt)
+Este instant și mult mai rapid.
+
+🔎 4. Verifică isStealing
+Dacă isStealing rămâne true 2–5 secunde, de acolo vine delay-ul.
+
+Asigură-te că îl resetezi rapid:
+
+isStealing = true
+executeSteal(...)
+isStealing = false
+Nu după wait() mare.
+
+🔥 Versiune optimă (rapidă și stabilă)
+local function startAutoSteal()
+    if Connections.autoSteal then return end
+    
+    local lastCheck = 0
+    local CHECK_INTERVAL = 0.08 -- foarte rapid dar stabil
+
+    Connections.autoSteal = RunService.Heartbeat:Connect(function()
+        if not Enabled.AutoSteal or isStealing then return end
+        if tick() - lastCheck < CHECK_INTERVAL then return end
+        
+        lastCheck = tick()
+        
+        local prompt = findNearestPrompt()
+        if prompt then
+            isStealing = true
+            fireproximityprompt(prompt)
+            isStealing = false
+        end
+    end)
+end
+📌 Dacă încă ai delay:
+Spune-mi:
+
+Ce face exact findNearestPrompt()?
+
+Ce face executeSteal()?
+
+E joc cu server-side validation mare?
+
+E prompt cu HoldDuration > 0?
+
+Pentru că dacă HoldDuration e 3 secunde → delay-ul e intenționat de joc.
+
+Dacă vrei, îți pot face o versiune ultra-optimizată tip competitive (zero waste scanning, spatial filtering, distance squared, etc.).
+
+
+You said:
+si stop autostealul : local function stopAutoSteal()
+    if Connections.autoSteal then
+        Connections.autoSteal:Disconnect()
+        Connections.autoSteal = nil
+    end
+    isStealing = false
+    ResetProgressBar()
+end
+
+ChatGPT said:
+Funcția ta stopAutoSteal() este corectă structural. Totuși, dacă încă există delay sau comportament întârziat după oprire, problema nu este în Disconnect(), ci în:
+
+un executeSteal() care încă rulează
+
+un fireproximityprompt() cu HoldDuration
+
+un flag isStealing care nu e controlat atomic
+
+un thread separat care nu este oprit
+
+Hai să o facem robustă.
+
+🔎 Varianta sigură (cu protecție completă)
+local function stopAutoSteal()
+    Enabled.AutoSteal = false -- oprește logica înainte de disconnect
+    
+    if Connections.autoSteal then
+        Connections.autoSteal:Disconnect()
+        Connections.autoSteal = nil
+    end
+
+    isStealing = false
+    
+    -- opțional: dacă folosești prompt hold manual
+    if currentPrompt then
+        pcall(function()
+            currentPrompt:InputHoldEnd()
+        end)
+        currentPrompt = nil
+    end
+
+    ResetProgressBar()
+end
+⚠️ Problema reală posibilă
+Dacă executeSteal() conține:
+
+task.wait(2)
+sau
+
+repeat task.wait() until ...
+atunci Disconnect() nu oprește acel cod deja pornit.
+
+În cazul ăsta ai nevoie de un guard logic:
+
+🔥 Control profesional (cu token)
+local stealToken = 0
+
+local function startAutoSteal()
+    if Connections.autoSteal then return end
+    
+    stealToken += 1
+    local myToken = stealToken
+
+    Connections.autoSteal = RunService.Heartbeat:Connect(function()
+        if myToken ~= stealToken then return end
+        if not Enabled.AutoSteal or isStealing then return end
+        
+        local prompt = findNearestPrompt()
+        if prompt then
+            isStealing = true
+            fireproximityprompt(prompt)
+            isStealing = false
+        end
+    end)
+end
+
+local function stopAutoSteal()
+    stealToken += 1 -- invalidează orice execuție activă
+    
+    if Connections.autoSteal then
+        Connections.autoSteal:Disconnect()
+        Connections.autoSteal = nil
+    end
+
+    isStealing = false
+    ResetProgressBar()
+end
+✔ oprește instant orice execuție
+✔ previne “ghost steal” după stop
+✔ fără delay rezidual
+
+🧠 Important
+Dacă delay-ul de 2–5 secunde apare doar la stop, 99% cauza este:
+
+HoldDuration al ProximityPrompt > 0
+
+Poți verifica:
+
+print(prompt.HoldDuration)
+Dacă e > 0, jocul forțează delay-ul server-side.
+
+Dacă vrei, trimite-mi și executeSteal() și îți spun exact unde se pierde timpul.
+
+
+You said:
+schimba toata interfata cat sa fie moody , dark , mov , cromatic
+
+You said:
+local C = {
+    bg = Color3.fromRGB(2, 2, 4),
+    purple = Color3.fromRGB(60, 130, 255),
+    purpleLight = Color3.fromRGB(100, 170, 255),
+    purpleDark = Color3.fromRGB(30, 80, 200),
+    purpleGlow = Color3.fromRGB(80, 150, 255),
+    accent = Color3.fromRGB(60, 130, 255),
+    text = Color3.fromRGB(255, 255, 255),
+    textDim = Color3.fromRGB(100, 170, 255),
+    success = Color3.fromRGB(34, 197, 94),
+    danger = Color3.fromRGB(239, 68, 68),
+    border = Color3.fromRGB(30, 60, 120)
+}
+
+ChatGPT said:
+Vrei moody + dark + mov + chromatic, dar paleta ta actuală este blue-cyan, nu purple real.
+
+Îți refac schema corect pe spectru violet/magenta cu contrast cinematic.
+
+🎨 Variantă Moody / Dark / Purple / Chromatic
+local C = {
     -- fundal principal (dark cinematic)
     bg = Color3.fromRGB(10, 6, 18),
 
@@ -1385,22 +1856,458 @@ local C = {
     -- border dark glossy
     border = Color3.fromRGB(45, 20, 80)
 }
+🔥 Ce face această paletă
+bg → aproape negru cu tentă violet (moody real)
 
-local sg = Instance.new("ScreenGui")
-sg.Name = "GONZO_HUB"
-sg.ResetOnSpawn = false
-sg.Parent = Player.PlayerGui
+purple → violet electric, nu albastru
 
-local function playSound(id, vol, spd)
-    pcall(function()
-        local s = Instance.new("Sound", SoundService)
-        s.SoundId = id
-        s.Volume = vol or 0.3
-        s.PlaybackSpeed = spd or 1
-        s:Play()
-        game:GetService("Debris"):AddItem(s, 1)
+purpleGlow → magenta pentru efect chromatic
+
+textDim → lavender, nu albastru
+
+contrast cinematic, fără culori spălăcite
+
+💡 Dacă vrei efect chromatic real
+Adaugă:
+
+UIGradient pe butoane (purple → magenta)
+
+UIStroke cu purpleGlow
+
+ImageLabel blur + transparency 0.9 pentru glow
+
+UICorner + shadow layer
+
+Dacă vrei, îți pot face:
+
+🎛️ versiune “AMETHYST CYBER”
+
+🌌 versiune “VOID PURPLE”
+
+💎 versiune “GLASS CHROMA”
+
+sau full redesign UI premium complet.
+
+Spune ce vibe vrei: cyberpunk / luxury / hacker / anime / minimalist / glossy.
+
+
+You said:
+ce pot schimba aici sa fie mai estetic ? -- Main Window
+local main = Instance.new("Frame", sg)
+main.Name = "GONZO HUB"
+main.Size = UDim2.new(0, 560 * guiScale, 0, 740 * guiScale)
+main.Position = isMobile and UDim2.new(0.5, -280 * guiScale, 0.5, -370 * guiScale) or UDim2.new(1, -580, 0, 20)
+main.BackgroundColor3 = Color3.fromRGB(2, 2, 4)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.ClipsDescendants = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 18 * guiScale)
+
+ChatGPT said:
+Estetic vorbind, problema nu este structura — este profunzimea vizuală.
+Acum ai un simplu frame plat. Pentru un UI moody / premium ai nevoie de:
+
+depth (shadow layering)
+
+contrast control
+
+subtle gradients
+
+stroke soft
+
+luminance separation
+
+Îți explic exact ce poți îmbunătăți și apoi îți dau varianta direct implementabilă.
+
+🔎 Ce poți schimba
+1️⃣ Background prea “flat”
+Color3.fromRGB(2,2,4) este aproape negru pur → pare mort vizual.
+
+➡ Folosește:
+
+dark purple cu luminance mic
+
+sau gradient vertical subtil
+
+2️⃣ Lipsă Stroke (border modern)
+UI modern = fără BorderSizePixel, dar cu UIStroke soft.
+
+3️⃣ Lipsă Shadow Layer
+Trebuie un layer în spate, mai mare, blur-like.
+
+4️⃣ Lipsă Gradient Subtil
+Un UI moody premium folosește gradient foarte fin.
+
+🔥 Versiune Estetică Premium (Moody Purple)
+-- Main Window
+local main = Instance.new("Frame", sg)
+main.Name = "GONZO HUB"
+main.Size = UDim2.new(0, 560 * guiScale, 0, 740 * guiScale)
+main.Position = isMobile 
+    and UDim2.new(0.5, -280 * guiScale, 0.5, -370 * guiScale) 
+    or UDim2.new(1, -580, 0, 20)
+
+main.BackgroundColor3 = Color3.fromRGB(14, 8, 24) -- dark purple, nu negru pur
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.ClipsDescendants = true
+
+local corner = Instance.new("UICorner", main)
+corner.CornerRadius = UDim.new(0, 20 * guiScale)
+
+-- 🔮 Soft Gradient
+local gradient = Instance.new("UIGradient", main)
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 12, 40)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 6, 20))
+}
+gradient.Rotation = 90
+
+-- 💎 Stroke modern
+local stroke = Instance.new("UIStroke", main)
+stroke.Color = Color3.fromRGB(120, 70, 255)
+stroke.Thickness = 1.2
+stroke.Transparency = 0.4
+
+-- 🌌 Shadow Layer
+local shadow = Instance.new("Frame", sg)
+shadow.Size = main.Size + UDim2.new(0, 20, 0, 20)
+shadow.Position = main.Position + UDim2.new(0, -10, 0, -10)
+shadow.BackgroundColor3 = Color3.fromRGB(120, 70, 255)
+shadow.BackgroundTransparency = 0.85
+shadow.ZIndex = main.ZIndex - 1
+shadow.BorderSizePixel = 0
+
+local shadowCorner = Instance.new("UICorner", shadow)
+shadowCorner.CornerRadius = UDim.new(0, 24 * guiScale)
+🎯 Ce obții vizual
+✔ fundal violet cinematic
+✔ depth real
+✔ glow subtil
+✔ look premium
+✔ nu mai pare executor basic
+
+🧠 Dacă vrei next level
+Poți adăuga:
+
+blur effect în spate (dacă ai access)
+
+noise texture 3% transparency
+
+mic light line sus (header accent)
+
+butoane cu gradient magenta → purple
+
+glass effect (BackgroundTransparency 0.05 + stroke strong)
+
+Dacă vrei, îți pot face redesign complet tip:
+
+💜 VOID X
+
+👾 CYBERPUNK
+
+🟣 LUXURY AMETHYST
+
+🔥 GONZO ELITE
+
+Spune vibe-ul și îl fac coerent pe tot UI-ul (header, tabs, toggle, glow, progress bar).
+
+
+You said:
+-- Main Window local main = Instance.new("Frame", sg) main.Name = "GONZO HUB" main.Size = UDim2.new(0, 560 * guiScale, 0, 740 * guiScale) main.Position = isMobile and UDim2.new(0.5, -280 * guiScale, 0.5, -370 * guiScale) or UDim2.new(1, -580, 0, 20) main.BackgroundColor3 = Color3.fromRGB(2, 2, 4) main.BorderSizePixel = 0 main.Active = true main.Draggable = true main.ClipsDescendants = true Instance.new("UICorner", main).CornerRadius = UDim.new(0, 18 * guiScale) RESCRIEL EXACT LFL
+
+ChatGPT said:
+-- Main Window
+local main = Instance.new("Frame", sg)
+main.Name = "GONZO HUB"
+main.Size = UDim2.new(0, 560 * guiScale, 0, 740 * guiScale)
+main.Position = isMobile 
+    and UDim2.new(0.5, -280 * guiScale, 0.5, -370 * guiScale) 
+    or UDim2.new(1, -580, 0, 20)
+
+-- 🎨 Moody Dark Purple Background
+main.BackgroundColor3 = Color3.fromRGB(14, 8, 24)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.ClipsDescendants = true
+
+-- Rounded Corners (slightly smoother)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 22 * guiScale)
+
+-- Subtle Vertical Gradient
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(24, 12, 44)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 6, 20))
+}
+gradient.Rotation = 90
+gradient.Parent = main
+
+-- Soft Modern Stroke
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(130, 70, 255)
+stroke.Thickness = 1.2
+stroke.Transparency = 0.45
+stroke.Parent = main
+
+You said:
+nu gen fix lfl cum e , asa sa l printezi sa l copiez ca l las asa
+
+ChatGPT said:
+-- Main Window
+local main = Instance.new("Frame", sg)
+main.Name = "GONZO HUB"
+main.Size = UDim2.new(0, 560 * guiScale, 0, 740 * guiScale)
+main.Position = isMobile and UDim2.new(0.5, -280 * guiScale, 0.5, -370 * guiScale) or UDim2.new(1, -580, 0, 20)
+main.BackgroundColor3 = Color3.fromRGB(2, 2, 4)
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.ClipsDescendants = true
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 18 * guiScale)
+
+You said:
+la asta ce pot optimiza? -- Progress Bar
+local progressBar = Instance.new("Frame", sg)
+progressBar.Size = UDim2.new(0, 420 * guiScale, 0, 56 * guiScale)
+progressBar.Position = UDim2.new(0.5, -210 * guiScale, 1, -168 * guiScale)
+progressBar.BackgroundColor3 = Color3.fromRGB(2, 2, 4)
+progressBar.BorderSizePixel = 0
+progressBar.ClipsDescendants = true
+Instance.new("UICorner", progressBar).CornerRadius = UDim.new(0, 14 * guiScale)
+
+local pStroke = Instance.new("UIStroke", progressBar)
+pStroke.Thickness = 2
+local pGrad = Instance.new("UIGradient", pStroke)
+pGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 170, 255)),
+    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 0, 0)),
+    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(60, 130, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+})
+
+task.spawn(function()
+    local r = 0
+    while progressBar.Parent do
+        r = (r + 3) % 360
+        pGrad.Rotation = r
+        task.wait(0.02)
+    end
+end)
+
+for i = 1, 12 do
+    local ball = Instance.new("Frame", progressBar)
+    ball.Size = UDim2.new(0, math.random(2, 3), 0, math.random(2, 3))
+    ball.Position = UDim2.new(math.random(3, 97) / 100, 0, math.random(15, 85) / 100, 0)
+    ball.BackgroundColor3 = Color3.fromRGB(100, 170, 255)
+    ball.BackgroundTransparency = math.random(20, 50) / 100
+    ball.BorderSizePixel = 0
+    ball.ZIndex = 1
+    Instance.new("UICorner", ball).CornerRadius = UDim.new(1, 0)
+    
+    task.spawn(function()
+        local startX = ball.Position.X.Scale
+        local startY = ball.Position.Y.Scale
+        local phase = math.random() * math.pi * 2
+        while ball.Parent do
+            local t = tick() + phase
+            local newX = startX + math.sin(t * (0.5 + i * 0.1)) * 0.03
+            local newY = startY + math.cos(t * (0.4 + i * 0.08)) * 0.05
+            ball.Position = UDim2.new(math.clamp(newX, 0.02, 0.98), 0, math.clamp(newY, 0.1, 0.9), 0)
+            ball.BackgroundTransparency = 0.3 + math.sin(t * 2) * 0.2
+            task.wait(0.03)
+        end
     end)
 end
+
+ProgressLabel = Instance.new("TextLabel", progressBar)
+ProgressLabel.Size = UDim2.new(0.35, 0, 0.5, 0)
+ProgressLabel.Position = UDim2.new(0, 10 * guiScale, 0, 0)
+ProgressLabel.BackgroundTransparency = 1
+ProgressLabel.Text = "GONZO"
+ProgressLabel.TextColor3 = C.text
+ProgressLabel.Font = Enum.Font.GothamBold
+ProgressLabel.TextSize = 14 * guiScale
+ProgressLabel.TextXAlignment = Enum.TextXAlignment.Left
+ProgressLabel.ZIndex = 3
+
+ProgressPercentLabel = Instance.new("TextLabel", progressBar)
+ProgressPercentLabel.Size = UDim2.new(1, 0, 0.5, 0)
+ProgressPercentLabel.BackgroundTransparency = 1
+ProgressPercentLabel.Text = ""
+ProgressPercentLabel.TextColor3 = Color3.fromRGB(160, 0, 255)
+ProgressPercentLabel.Font = Enum.Font.GothamBlack
+ProgressPercentLabel.TextSize = 18 * guiScale
+ProgressPercentLabel.TextXAlignment = Enum.TextXAlignment.Center
+ProgressPercentLabel.ZIndex = 3
+
+RadiusInput = Instance.new("TextBox", progressBar)
+RadiusInput.Size = UDim2.new(0, 40 * guiScale, 0, 22 * guiScale)
+RadiusInput.Position = UDim2.new(1, -50 * guiScale, 0, 2 * guiScale)
+RadiusInput.BackgroundColor3 = Color3.fromRGB(5, 5, 8)
+RadiusInput.Text = tostring(Values.STEAL_RADIUS)
+RadiusInput.TextColor3 = C.purpleLight
+RadiusInput.Font = Enum.Font.GothamBold
+RadiusInput.TextSize = 12 * guiScale
+RadiusInput.ZIndex = 3
+Instance.new("UICorner", RadiusInput).CornerRadius = UDim.new(0, 6 * guiScale)
+
+RadiusInput.FocusLost:Connect(function()
+    local n = tonumber(RadiusInput.Text)
+    if n then
+        Values.STEAL_RADIUS = math.clamp(math.floor(n), 5, 100)
+        RadiusInput.Text = tostring(Values.STEAL_RADIUS)
+    end
+end)
+
+local pTrack = Instance.new("Frame", progressBar)
+pTrack.Size = UDim2.new(0.94, 0, 0, 8 * guiScale)
+pTrack.Position = UDim2.new(0.03, 0, 1, -15 * guiScale)
+pTrack.BackgroundColor3 = Color3.fromRGB(5, 5, 8)
+pTrack.ZIndex = 2
+Instance.new("UICorner", pTrack).CornerRadius = UDim.new(1, 0)
+
+ProgressBarFill = Instance.new("Frame", pTrack)
+ProgressBarFill.Size = UDim2.new(0, 0, 1, 0)
+ProgressBarFill.BackgroundColor3 = C.purple
+ProgressBarFill.ZIndex = 2
+Instance.new("UICorner", ProgressBarFill).CornerRadius = UDim.new(1, 0)
+
+ChatGPT said:
+Bun. Aici ai două tipuri de optimizare: performanță și estetică controlată.
+Acum problema principală este performanța — ai 13 thread-uri (task.spawn) care rulează permanent.
+
+⚠️ 1️⃣ Problemă majoră: prea multe loop-uri active
+Ai:
+
+1 loop pentru rotația gradientului
+
+12 loop-uri pentru fiecare particulă
+
+Asta înseamnă 13 while active constant.
+Pe executor = FPS drop + delay în restul scriptului.
+
+✅ OPTIMIZARE PROFESIONALĂ (1 singur loop)
+Folosește un singur RunService.Heartbeat pentru tot.
+
+🔥 Înlocuiește TOT sistemul de animație cu asta:
+local RunService = game:GetService("RunService")
+
+local balls = {}
+
+for i = 1, 12 do
+    local ball = Instance.new("Frame")
+    ball.Size = UDim2.new(0, math.random(2, 3), 0, math.random(2, 3))
+    ball.Position = UDim2.new(math.random(), 0, math.random(), 0)
+    ball.BackgroundColor3 = C.purpleLight
+    ball.BackgroundTransparency = math.random(30, 60) / 100
+    ball.BorderSizePixel = 0
+    ball.ZIndex = 1
+    ball.Parent = progressBar
+    Instance.new("UICorner", ball).CornerRadius = UDim.new(1, 0)
+
+    balls[i] = {
+        frame = ball,
+        startX = ball.Position.X.Scale,
+        startY = ball.Position.Y.Scale,
+        phase = math.random() * math.pi * 2,
+        speedX = 0.4 + i * 0.05,
+        speedY = 0.3 + i * 0.04
+    }
+end
+
+local rotation = 0
+
+RunService.Heartbeat:Connect(function(dt)
+    rotation = (rotation + dt * 60) % 360
+    pGrad.Rotation = rotation
+
+    local t = tick()
+
+    for _, data in ipairs(balls) do
+        local newX = data.startX + math.sin(t * data.speedX + data.phase) * 0.03
+        local newY = data.startY + math.cos(t * data.speedY + data.phase) * 0.05
+
+        data.frame.Position = UDim2.new(
+            math.clamp(newX, 0.02, 0.98), 0,
+            math.clamp(newY, 0.1, 0.9), 0
+        )
+
+        data.frame.BackgroundTransparency = 0.4 + math.sin(t * 2) * 0.15
+    end
+end)
+🔥 Ce ai câștigat:
+✔ 13 thread-uri → 1 singur
+✔ mișcare mai fluidă
+✔ mai puțin delay în AutoSteal
+✔ mai stabil pe executors slabi
+
+🎨 2️⃣ Îmbunătățire estetică rapidă
+🔹 Track prea plat
+Înlocuiește:
+
+pTrack.BackgroundColor3 = Color3.fromRGB(5, 5, 8)
+cu:
+
+pTrack.BackgroundColor3 = Color3.fromRGB(18, 10, 35)
+🔹 Fill prea simplu
+Adaugă gradient pe fill:
+
+local fillGrad = Instance.new("UIGradient", ProgressBarFill)
+fillGrad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, C.purple),
+    ColorSequenceKeypoint.new(1, C.purpleGlow)
+}
+fillGrad.Rotation = 0
+🔹 Stroke subtil pe Track
+local trackStroke = Instance.new("UIStroke", pTrack)
+trackStroke.Color = C.purpleDark
+trackStroke.Thickness = 1
+trackStroke.Transparency = 0.5
+🎯 3️⃣ Micro-optimizări mici dar importante
+Înlocuiește:
+tick()
+cu:
+
+os.clock()
+Este mai performant și mai stabil.
+
+📌 Concluzie clară
+Cea mai mare problemă era:
+
+multe task.spawn + while loops
+
+După optimizare:
+
+UI mai fluid
+
+FPS mai stabil
+
+mai puțin input delay
+
+executor mai responsiv
+
+Dacă vrei, pot să-ți fac progress bar-ul stil:
+
+🔥 neon animated
+
+🌌 void cosmic
+
+💎 luxury glass
+
+⚡ cyberpulse reactive
+
+Spune vibe-ul și îl fac coerent cu tot UI-ul tău.
+
+
+You said:
+scrie l as a whole
+
+ChatGPT said:
+local RunService = game:GetService("RunService")
 
 -- Progress Bar
 local progressBar = Instance.new("Frame", sg)
@@ -1531,6 +2438,7 @@ fillGrad.Color = ColorSequence.new{
     ColorSequenceKeypoint.new(0, C.purple),
     ColorSequenceKeypoint.new(1, C.purpleGlow)
 }
+
 -- Main Window
 local main = Instance.new("Frame", sg)
 main.Name = "GONZO HUB"
@@ -1543,8 +2451,6 @@ main.Draggable = true
 main.ClipsDescendants = true
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 18 * guiScale)
 
-local shadowCorner = Instance.new("UICorner", shadow)
-shadowCorner.CornerRadius = UDim.new(0, 24 * guiScale)
 local mainStroke = Instance.new("UIStroke", main)
 mainStroke.Thickness = 2
 local strokeGrad = Instance.new("UIGradient", mainStroke)
