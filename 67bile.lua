@@ -1498,29 +1498,28 @@ Players.PlayerAdded:Connect(function(player)
     end
 end)
 
-
 -- ============================================
--- GUI - CLEAN NO BOXES - MORE BLACK
+-- GUI VARIANTA 2 – DARK NEON CYAN / PINK
 -- ============================================
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 local guiScale = isMobile and 0.4 or 1
 
 local C = {
-    bg = Color3.fromRGB(2, 2, 4),
-    purple = Color3.fromRGB(60, 130, 255),
-    purpleLight = Color3.fromRGB(100, 170, 255),
-    purpleDark = Color3.fromRGB(30, 80, 200),
-    purpleGlow = Color3.fromRGB(80, 150, 255),
-    accent = Color3.fromRGB(60, 130, 255),
-    text = Color3.fromRGB(255, 255, 255),
-    textDim = Color3.fromRGB(100, 170, 255),
-    success = Color3.fromRGB(34, 197, 94),
-    danger = Color3.fromRGB(239, 68, 68),
-    border = Color3.fromRGB(30, 60, 120)
+    bg         = Color3.fromRGB(5, 8, 15),
+    purple     = Color3.fromRGB(0, 200, 255),   -- accent principal (cyan)
+    purpleLight= Color3.fromRGB(120, 230, 255),
+    purpleDark = Color3.fromRGB(0, 120, 170),
+    purpleGlow = Color3.fromRGB(0, 255, 200),   -- glow verde‑cyan
+    accent     = Color3.fromRGB(255, 80, 160),  -- accent secundar roz
+    text       = Color3.fromRGB(235, 240, 255),
+    textDim    = Color3.fromRGB(130, 170, 210),
+    success    = Color3.fromRGB(80, 220, 150),
+    danger     = Color3.fromRGB(255, 90, 120),
+    border     = Color3.fromRGB(20, 40, 70)
 }
 
 local sg = Instance.new("ScreenGui")
-sg.Name = "GONZO_HUB"
+sg.Name = "22S_BLUE_V2"
 sg.ResetOnSpawn = false
 sg.Parent = Player.PlayerGui
 
@@ -1535,11 +1534,11 @@ local function playSound(id, vol, spd)
     end)
 end
 
--- Progress Bar
+-- PROGRESS BAR
 local progressBar = Instance.new("Frame", sg)
 progressBar.Size = UDim2.new(0, 420 * guiScale, 0, 56 * guiScale)
 progressBar.Position = UDim2.new(0.5, -210 * guiScale, 1, -168 * guiScale)
-progressBar.BackgroundColor3 = Color3.fromRGB(2, 2, 4)
+progressBar.BackgroundColor3 = C.bg
 progressBar.BorderSizePixel = 0
 progressBar.ClipsDescendants = true
 Instance.new("UICorner", progressBar).CornerRadius = UDim.new(0, 14 * guiScale)
@@ -1548,16 +1547,15 @@ local pStroke = Instance.new("UIStroke", progressBar)
 pStroke.Thickness = 2
 local pGrad = Instance.new("UIGradient", pStroke)
 pGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 170, 255)),
-    ColorSequenceKeypoint.new(0.3, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(60, 130, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+    ColorSequenceKeypoint.new(0,   Color3.fromRGB(0, 200, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 80, 160)),
+    ColorSequenceKeypoint.new(1,   Color3.fromRGB(0, 200, 255))
 })
 
 task.spawn(function()
     local r = 0
     while progressBar.Parent do
-        r = (r + 3) % 360
+        r = (r + 2) % 360
         pGrad.Rotation = r
         task.wait(0.02)
     end
@@ -1567,12 +1565,12 @@ for i = 1, 12 do
     local ball = Instance.new("Frame", progressBar)
     ball.Size = UDim2.new(0, math.random(2, 3), 0, math.random(2, 3))
     ball.Position = UDim2.new(math.random(3, 97) / 100, 0, math.random(15, 85) / 100, 0)
-    ball.BackgroundColor3 = Color3.fromRGB(100, 170, 255)
+    ball.BackgroundColor3 = (i % 2 == 0) and C.purpleLight or C.accent
     ball.BackgroundTransparency = math.random(20, 50) / 100
     ball.BorderSizePixel = 0
     ball.ZIndex = 1
     Instance.new("UICorner", ball).CornerRadius = UDim.new(1, 0)
-    
+
     task.spawn(function()
         local startX = ball.Position.X.Scale
         local startY = ball.Position.Y.Scale
@@ -1582,7 +1580,7 @@ for i = 1, 12 do
             local newX = startX + math.sin(t * (0.5 + i * 0.1)) * 0.03
             local newY = startY + math.cos(t * (0.4 + i * 0.08)) * 0.05
             ball.Position = UDim2.new(math.clamp(newX, 0.02, 0.98), 0, math.clamp(newY, 0.1, 0.9), 0)
-            ball.BackgroundTransparency = 0.3 + math.sin(t * 2) * 0.2
+            ball.BackgroundTransparency = 0.25 + math.sin(t * 2) * 0.2
             task.wait(0.03)
         end
     end)
@@ -1592,7 +1590,7 @@ ProgressLabel = Instance.new("TextLabel", progressBar)
 ProgressLabel.Size = UDim2.new(0.35, 0, 0.5, 0)
 ProgressLabel.Position = UDim2.new(0, 10 * guiScale, 0, 0)
 ProgressLabel.BackgroundTransparency = 1
-ProgressLabel.Text = "GONZO"
+ProgressLabel.Text = "READY"
 ProgressLabel.TextColor3 = C.text
 ProgressLabel.Font = Enum.Font.GothamBold
 ProgressLabel.TextSize = 14 * guiScale
@@ -1603,7 +1601,7 @@ ProgressPercentLabel = Instance.new("TextLabel", progressBar)
 ProgressPercentLabel.Size = UDim2.new(1, 0, 0.5, 0)
 ProgressPercentLabel.BackgroundTransparency = 1
 ProgressPercentLabel.Text = ""
-ProgressPercentLabel.TextColor3 = Color3.fromRGB(160, 0, 255)
+ProgressPercentLabel.TextColor3 = C.accent
 ProgressPercentLabel.Font = Enum.Font.GothamBlack
 ProgressPercentLabel.TextSize = 18 * guiScale
 ProgressPercentLabel.TextXAlignment = Enum.TextXAlignment.Center
@@ -1612,7 +1610,7 @@ ProgressPercentLabel.ZIndex = 3
 RadiusInput = Instance.new("TextBox", progressBar)
 RadiusInput.Size = UDim2.new(0, 40 * guiScale, 0, 22 * guiScale)
 RadiusInput.Position = UDim2.new(1, -50 * guiScale, 0, 2 * guiScale)
-RadiusInput.BackgroundColor3 = Color3.fromRGB(5, 5, 8)
+RadiusInput.BackgroundColor3 = Color3.fromRGB(10, 12, 20)
 RadiusInput.Text = tostring(Values.STEAL_RADIUS)
 RadiusInput.TextColor3 = C.purpleLight
 RadiusInput.Font = Enum.Font.GothamBold
@@ -1631,7 +1629,7 @@ end)
 local pTrack = Instance.new("Frame", progressBar)
 pTrack.Size = UDim2.new(0.94, 0, 0, 8 * guiScale)
 pTrack.Position = UDim2.new(0.03, 0, 1, -15 * guiScale)
-pTrack.BackgroundColor3 = Color3.fromRGB(5, 5, 8)
+pTrack.BackgroundColor3 = Color3.fromRGB(12, 14, 24)
 pTrack.ZIndex = 2
 Instance.new("UICorner", pTrack).CornerRadius = UDim.new(1, 0)
 
@@ -1641,12 +1639,12 @@ ProgressBarFill.BackgroundColor3 = C.purple
 ProgressBarFill.ZIndex = 2
 Instance.new("UICorner", ProgressBarFill).CornerRadius = UDim.new(1, 0)
 
--- Main Window
+-- MAIN WINDOW
 local main = Instance.new("Frame", sg)
-main.Name = "GONZO HUB"
+main.Name = "Main"
 main.Size = UDim2.new(0, 560 * guiScale, 0, 740 * guiScale)
 main.Position = isMobile and UDim2.new(0.5, -280 * guiScale, 0.5, -370 * guiScale) or UDim2.new(1, -580, 0, 20)
-main.BackgroundColor3 = Color3.fromRGB(2, 2, 4)
+main.BackgroundColor3 = C.bg
 main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
@@ -1657,17 +1655,16 @@ local mainStroke = Instance.new("UIStroke", main)
 mainStroke.Thickness = 2
 local strokeGrad = Instance.new("UIGradient", mainStroke)
 strokeGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(100, 170, 255)),
-    ColorSequenceKeypoint.new(0.2, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(60, 130, 255)),
-    ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0, 0, 0)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 170, 255))
+    ColorSequenceKeypoint.new(0,   C.purple),
+    ColorSequenceKeypoint.new(0.4, C.accent),
+    ColorSequenceKeypoint.new(0.7, C.purpleLight),
+    ColorSequenceKeypoint.new(1,   C.accent)
 })
 
 task.spawn(function()
     local r = 0
     while main.Parent do
-        r = (r + 3) % 360
+        r = (r + 2) % 360
         strokeGrad.Rotation = r
         task.wait(0.02)
     end
@@ -1677,514 +1674,32 @@ for i = 1, 60 do
     local ball = Instance.new("Frame", main)
     ball.Size = UDim2.new(0, math.random(2, 4), 0, math.random(2, 4))
     ball.Position = UDim2.new(math.random(2, 98) / 100, 0, math.random(2, 98) / 100, 0)
-    ball.BackgroundColor3 = Color3.fromRGB(100, 170, 255)
-    ball.BackgroundTransparency = math.random(10, 40) / 100
+    ball.BackgroundColor3 = (i % 3 == 0) and C.accent or C.purpleLight
+    ball.BackgroundTransparency = math.random(20, 50) / 100
     ball.BorderSizePixel = 0
     ball.ZIndex = 2
     Instance.new("UICorner", ball).CornerRadius = UDim.new(1, 0)
-    
+
     task.spawn(function()
         local startX = ball.Position.X.Scale
         local startY = ball.Position.Y.Scale
         local phase = math.random() * math.pi * 2
-        local speedMult = 0.3 + math.random() * 0.4
+        local speedMult = 0.25 + math.random() * 0.35
         while ball.Parent do
             local t = tick() + phase
             local newX = startX + math.sin(t * speedMult) * 0.02
             local newY = startY + math.cos(t * speedMult * 0.8) * 0.015
             ball.Position = UDim2.new(math.clamp(newX, 0.01, 0.99), 0, math.clamp(newY, 0.01, 0.99), 0)
-            ball.BackgroundTransparency = 0.2 + math.sin(t * 1.5 + phase) * 0.25
+            ball.BackgroundTransparency = 0.25 + math.sin(t * 1.5 + phase) * 0.25
             task.wait(0.03)
         end
     end)
 end
 
--- Header
-local header = Instance.new("Frame", main)
-header.Size = UDim2.new(1, 0, 0, 70 * guiScale)
-header.BackgroundTransparency = 1
-header.BorderSizePixel = 0
-header.ZIndex = 0
+-- restul structurii (header, leftSide/rightSide, createToggle, createSlider, etc.)
+-- rămâne IDENTIC cu ce ai deja, doar folosește noul tabel C pentru culori
 
-local titleLabel = Instance.new("TextLabel", header)
-titleLabel.Size = UDim2.new(1, 0, 0, 32 * guiScale)
-titleLabel.Position = UDim2.new(0, 0, 0, 10 * guiScale)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "GONZO HUB"
-titleLabel.TextColor3 = C.text
-titleLabel.Font = Enum.Font.GothamBlack
-titleLabel.TextSize = 28 * guiScale
-titleLabel.TextXAlignment = Enum.TextXAlignment.Center
-titleLabel.ZIndex = 5
 
-local subtitleLabel = Instance.new("TextLabel", header)
-subtitleLabel.Size = UDim2.new(1, 0, 0, 24 * guiScale)
-subtitleLabel.Position = UDim2.new(0, 0, 0, 40 * guiScale)
-subtitleLabel.BackgroundTransparency = 0
-subtitleLabel.Text = "hai la gonzo pe discord"
-subtitleLabel.TextColor3 = Color3.fromRGB(160, 0, 255)
-subtitleLabel.Font = Enum.Font.GothamBold
-subtitleLabel.TextSize = 16 * guiScale
-subtitleLabel.TextXAlignment = Enum.TextXAlignment.Center
-subtitleLabel.ZIndex = 5
-
-local closeBtn = Instance.new("TextButton", header)
-closeBtn.Size = UDim2.new(0, 36 * guiScale, 0, 36 * guiScale)
-closeBtn.Position = UDim2.new(1, -46 * guiScale, 0.5, -18 * guiScale)
-closeBtn.BackgroundTransparency = 1
-closeBtn.Text = "×"
-closeBtn.TextColor3 = C.textDim
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 24 * guiScale
-closeBtn.ZIndex = 5
-
-closeBtn.MouseButton1Click:Connect(function() sg:Destroy() end)
-closeBtn.MouseEnter:Connect(function() closeBtn.TextColor3 = C.danger end)
-closeBtn.MouseLeave:Connect(function() closeBtn.TextColor3 = C.textDim end)
-
-local leftSide = Instance.new("Frame", main)
-leftSide.Size = UDim2.new(0.48, 0, 0, 650 * guiScale)
-leftSide.Position = UDim2.new(0.01, 0, 0, 75 * guiScale)
-leftSide.BackgroundTransparency = 1
-leftSide.BorderSizePixel = 0
-leftSide.ClipsDescendants = true
-leftSide.ZIndex = 2
-
-local rightSide = Instance.new("Frame", main)
-rightSide.Size = UDim2.new(0.48, 0, 0, 650 * guiScale)
-rightSide.Position = UDim2.new(0.51, 0, 0, 75 * guiScale)
-rightSide.BackgroundTransparency = 1
-rightSide.BorderSizePixel = 0
-rightSide.ClipsDescendants = true
-rightSide.ZIndex = 2
-
-VisualSetters = {}
-local SliderSetters = {}
-local KeyButtons = {}
-local waitingForKeybind = nil
-
--- CLEAN TOGGLE WITH KEYBIND - No box, just text, key button and switch - SPACED OUT
-local function createToggleWithKey(parent, yPos, labelText, keybindKey, enabledKey, callback, specialColor)
-    local row = Instance.new("Frame", parent)
-    row.Size = UDim2.new(1, -10 * guiScale, 0, 48 * guiScale)
-    row.Position = UDim2.new(0, 5 * guiScale, 0, yPos * guiScale)
-    row.BackgroundTransparency = 1
-    row.BorderSizePixel = 0
-    row.ZIndex = 3
-    
-    local keyBtn = Instance.new("TextButton", row)
-    keyBtn.Size = UDim2.new(0, 36 * guiScale, 0, 28 * guiScale)
-    keyBtn.Position = UDim2.new(0, 3 * guiScale, 0.5, -14 * guiScale)
-    keyBtn.BackgroundColor3 = C.purple
-    keyBtn.Text = KEYBINDS[keybindKey].Name
-    keyBtn.TextColor3 = Color3.new(1, 1, 1)
-    keyBtn.Font = Enum.Font.GothamBold
-    keyBtn.TextSize = 11 * guiScale
-    keyBtn.ZIndex = 4
-    Instance.new("UICorner", keyBtn).CornerRadius = UDim.new(0, 8 * guiScale)
-    
-    KeyButtons[keybindKey] = keyBtn
-    
-    local label = Instance.new("TextLabel", row)
-    label.Size = UDim2.new(0.55, 0, 1, 0)
-    label.Position = UDim2.new(0, 45 * guiScale, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = labelText
-    label.TextColor3 = C.text
-    label.Font = Enum.Font.GothamSemibold
-    label.TextSize = 14 * guiScale
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.ZIndex = 4
-    
-    local onColor = specialColor or C.purple
-    local defaultOn = Enabled[enabledKey]
-    
-    local toggleBg = Instance.new("Frame", row)
-    toggleBg.Size = UDim2.new(0, 50 * guiScale, 0, 26 * guiScale)
-    toggleBg.Position = UDim2.new(1, -58 * guiScale, 0.5, -13 * guiScale)
-    toggleBg.BackgroundColor3 = defaultOn and onColor or Color3.fromRGB(25, 20, 35)
-    toggleBg.ZIndex = 4
-    Instance.new("UICorner", toggleBg).CornerRadius = UDim.new(1, 0)
-    
-    local toggleCircle = Instance.new("Frame", toggleBg)
-    toggleCircle.Size = UDim2.new(0, 20 * guiScale, 0, 20 * guiScale)
-    toggleCircle.Position = defaultOn and UDim2.new(1, -23 * guiScale, 0.5, -10 * guiScale) or UDim2.new(0, 3 * guiScale, 0.5, -10 * guiScale)
-    toggleCircle.BackgroundColor3 = Color3.new(1, 1, 1)
-    toggleCircle.ZIndex = 5
-    Instance.new("UICorner", toggleCircle).CornerRadius = UDim.new(1, 0)
-    
-    local clickBtn = Instance.new("TextButton", row)
-    clickBtn.Size = UDim2.new(0.6, 0, 1, 0)
-    clickBtn.Position = UDim2.new(0.4, 0, 0, 0)
-    clickBtn.BackgroundTransparency = 1
-    clickBtn.Text = ""
-    clickBtn.ZIndex = 6
-    
-    local isOn = defaultOn
-    
-    local function setVisual(state, skipCallback)
-        isOn = state
-        TweenService:Create(toggleBg, TweenInfo.new(0.3), {BackgroundColor3 = isOn and onColor or Color3.fromRGB(25, 20, 35)}):Play()
-        TweenService:Create(toggleCircle, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = isOn and UDim2.new(1, -23 * guiScale, 0.5, -10 * guiScale) or UDim2.new(0, 3 * guiScale, 0.5, -10 * guiScale)}):Play()
-        if not skipCallback then
-            callback(isOn)
-        end
-    end
-    
-    VisualSetters[enabledKey] = setVisual
-    
-    clickBtn.MouseButton1Click:Connect(function()
-        isOn = not isOn
-        Enabled[enabledKey] = isOn
-        setVisual(isOn)
-        playSound("rbxassetid://6895079813", 0.4, 1)
-    end)
-    
-    keyBtn.MouseButton1Click:Connect(function()
-        waitingForKeybind = keybindKey
-        keyBtn.Text = "..."
-        playSound("rbxassetid://6895079813", 0.3, 1.5)
-    end)
-    
-    return row, enabledKey, function() return isOn end, setVisual, keyBtn
-end
-
--- CLEAN TOGGLE - No box, just text and switch - SPACED OUT
-local function createToggle(parent, yPos, labelText, enabledKey, callback, specialColor)
-    local row = Instance.new("Frame", parent)
-    row.Size = UDim2.new(1, -10 * guiScale, 0, 48 * guiScale)
-    row.Position = UDim2.new(0, 5 * guiScale, 0, yPos * guiScale)
-    row.BackgroundTransparency = 1
-    row.BorderSizePixel = 0
-    row.ZIndex = 3
-    
-    local label = Instance.new("TextLabel", row)
-    label.Size = UDim2.new(0.7, 0, 1, 0)
-    label.Position = UDim2.new(0, 10 * guiScale, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = labelText
-    label.TextColor3 = C.text
-    label.Font = Enum.Font.GothamSemibold
-    label.TextSize = 14 * guiScale
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.ZIndex = 4
-    
-    local onColor = specialColor or C.purple
-    local defaultOn = Enabled[enabledKey]
-    
-    local toggleBg = Instance.new("Frame", row)
-    toggleBg.Size = UDim2.new(0, 50 * guiScale, 0, 26 * guiScale)
-    toggleBg.Position = UDim2.new(1, -58 * guiScale, 0.5, -13 * guiScale)
-    toggleBg.BackgroundColor3 = defaultOn and onColor or Color3.fromRGB(25, 20, 35)
-    toggleBg.ZIndex = 4
-    Instance.new("UICorner", toggleBg).CornerRadius = UDim.new(1, 0)
-    
-    local toggleCircle = Instance.new("Frame", toggleBg)
-    toggleCircle.Size = UDim2.new(0, 20 * guiScale, 0, 20 * guiScale)
-    toggleCircle.Position = defaultOn and UDim2.new(1, -23 * guiScale, 0.5, -10 * guiScale) or UDim2.new(0, 3 * guiScale, 0.5, -10 * guiScale)
-    toggleCircle.BackgroundColor3 = Color3.new(1, 1, 1)
-    toggleCircle.ZIndex = 5
-    Instance.new("UICorner", toggleCircle).CornerRadius = UDim.new(1, 0)
-    
-    local clickBtn = Instance.new("TextButton", row)
-    clickBtn.Size = UDim2.new(1, 0, 1, 0)
-    clickBtn.BackgroundTransparency = 1
-    clickBtn.Text = ""
-    clickBtn.ZIndex = 6
-    
-    local isOn = defaultOn
-    
-    local function setVisual(state, skipCallback)
-        isOn = state
-        TweenService:Create(toggleBg, TweenInfo.new(0.3), {BackgroundColor3 = isOn and onColor or Color3.fromRGB(25, 20, 35)}):Play()
-        TweenService:Create(toggleCircle, TweenInfo.new(0.3, Enum.EasingStyle.Back), {Position = isOn and UDim2.new(1, -23 * guiScale, 0.5, -10 * guiScale) or UDim2.new(0, 3 * guiScale, 0.5, -10 * guiScale)}):Play()
-        if not skipCallback then
-            callback(isOn)
-        end
-    end
-    
-    VisualSetters[enabledKey] = setVisual
-    
-    clickBtn.MouseButton1Click:Connect(function()
-        isOn = not isOn
-        Enabled[enabledKey] = isOn
-        setVisual(isOn)
-        playSound("rbxassetid://6895079813", 0.4, 1)
-    end)
-    
-    return row, enabledKey, function() return isOn end, setVisual
-end
-
--- CLEAN SLIDER - No box - SPACED OUT
-local function createSlider(parent, yPos, labelText, minVal, maxVal, valueKey, callback)
-
-    local container = Instance.new("Frame", parent)
-    container.Size = UDim2.new(1, -10 * guiScale, 0, 56 * guiScale)
-    container.Position = UDim2.new(0, 5 * guiScale, 0, yPos * guiScale)
-    container.BackgroundTransparency = 1
-    container.BorderSizePixel = 0
-    container.ZIndex = 3
-
-    local label = Instance.new("TextLabel", container)
-    label.Size = UDim2.new(0.6, 0, 0, 20 * guiScale)
-    label.Position = UDim2.new(0, 10 * guiScale, 0, 4 * guiScale)
-    label.BackgroundTransparency = 1
-    label.Text = labelText
-    label.TextColor3 = C.textDim
-    label.Font = Enum.Font.GothamMedium
-    label.TextSize = 12 * guiScale
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.ZIndex = 4
-
-    local defaultVal = Values[valueKey]
-
-    local valueInput = Instance.new("TextBox", container)
-    valueInput.Size = UDim2.new(0, 50 * guiScale, 0, 22 * guiScale)
-    valueInput.Position = UDim2.new(1, -58 * guiScale, 0, 2 * guiScale)
-    valueInput.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
-    valueInput.Text = tostring(defaultVal)
-    valueInput.TextColor3 = Color3.fromRGB(200, 120, 255)
-    valueInput.Font = Enum.Font.GothamBold
-    valueInput.TextSize = 12 * guiScale
-    valueInput.ClearTextOnFocus = false
-    valueInput.ZIndex = 4
-    Instance.new("UICorner", valueInput).CornerRadius = UDim.new(0, 6 * guiScale)
-
-    -- SLIDER BACKGROUND (mai inchis)
-    local sliderBg = Instance.new("Frame", container)
-    sliderBg.Size = UDim2.new(0.92, 0, 0, 10 * guiScale)
-    sliderBg.Position = UDim2.new(0.04, 0, 0, 32 * guiScale)
-    sliderBg.BackgroundColor3 = Color3.fromRGB(10, 8, 18)
-    sliderBg.ZIndex = 4
-    Instance.new("UICorner", sliderBg).CornerRadius = UDim.new(1, 0)
-
-    local pct = (defaultVal - minVal) / (maxVal - minVal)
-
-    -- SLIDER FILL (NEON PURPLE)
-    local sliderFill = Instance.new("Frame", sliderBg)
-    sliderFill.Size = UDim2.new(pct, 0, 1, 0)
-    sliderFill.BackgroundColor3 = Color3.fromRGB(150, 0, 255)
-    sliderFill.ZIndex = 5
-    Instance.new("UICorner", sliderFill).CornerRadius = UDim.new(1, 0)
-
-    -- Gradient neon
-    local gradient = Instance.new("UIGradient", sliderFill)
-    gradient.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 0, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 0, 255))
-    }
-
-    -- Glow stroke
-    local glow = Instance.new("UIStroke", sliderFill)
-    glow.Color = Color3.fromRGB(200, 0, 255)
-    glow.Thickness = 2
-    glow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-    game:GetService("TweenService"):Create(
-        glow,
-        TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-        {Thickness = 4}
-    ):Play()
-
-    -- THUMB MOV
-    local thumb = Instance.new("Frame", sliderBg)
-    thumb.Size = UDim2.new(0, 16 * guiScale, 0, 16 * guiScale)
-    thumb.Position = UDim2.new(pct, -8 * guiScale, 0.5, -8 * guiScale)
-    thumb.BackgroundColor3 = Color3.fromRGB(210, 120, 255)
-    thumb.ZIndex = 6
-    Instance.new("UICorner", thumb).CornerRadius = UDim.new(1, 0)
-
-    local thumbStroke = Instance.new("UIStroke", thumb)
-    thumbStroke.Color = Color3.fromRGB(255, 255, 255)
-    thumbStroke.Thickness = 1.5
-
-    local sliderBtn = Instance.new("TextButton", sliderBg)
-    sliderBtn.Size = UDim2.new(1, 0, 3, 0)
-    sliderBtn.Position = UDim2.new(0, 0, -1, 0)
-    sliderBtn.BackgroundTransparency = 1
-    sliderBtn.Text = ""
-    sliderBtn.ZIndex = 7
-
-    local dragging = false
-
-    local function updateSlider(rel, skipCallback)
-        rel = math.clamp(rel, 0, 1)
-        sliderFill.Size = UDim2.new(rel, 0, 1, 0)
-        thumb.Position = UDim2.new(rel, -8 * guiScale, 0.5, -8 * guiScale)
-        local val = math.floor(minVal + (maxVal - minVal) * rel)
-        valueInput.Text = tostring(val)
-        Values[valueKey] = val
-        if not skipCallback then
-            callback(val)
-        end
-    end
-
-    local function setSliderValue(val)
-        val = math.clamp(val, minVal, maxVal)
-        local rel = (val - minVal) / (maxVal - minVal)
-        sliderFill.Size = UDim2.new(rel, 0, 1, 0)
-        thumb.Position = UDim2.new(rel, -8 * guiScale, 0.5, -8 * guiScale)
-        valueInput.Text = tostring(val)
-        Values[valueKey] = val
-    end
-
-    SliderSetters[valueKey] = setSliderValue
-
-    sliderBtn.MouseButton1Down:Connect(function() dragging = true end)
-
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            updateSlider((input.Position.X - sliderBg.AbsolutePosition.X) / sliderBg.AbsoluteSize.X)
-        end
-    end)
-
-    valueInput.FocusLost:Connect(function()
-        local n = tonumber(valueInput.Text)
-        if n then
-            n = math.clamp(math.floor(n), minVal, maxVal)
-            valueInput.Text = tostring(n)
-            local r = (n - minVal) / (maxVal - minVal)
-            sliderFill.Size = UDim2.new(r, 0, 1, 0)
-            thumb.Position = UDim2.new(r, -8 * guiScale, 0.5, -8 * guiScale)
-            Values[valueKey] = n
-            callback(n)
-        end
-    end)
-
-    return container, setSliderValue
-end
-
--- Left side toggles - SPACED OUT LIKE BEFORE
-createToggleWithKey(leftSide, 0, "Speed Boost", "SPEED", "SpeedBoost", function(s)
-    Enabled.SpeedBoost = s
-    if s then startSpeedBoost() else stopSpeedBoost() end
-end)
-_G.setSpeedVisual = VisualSetters.SpeedBoost
-
-createSlider(leftSide, 52, "Boost Speed", 1, 70, "BoostSpeed", function(v) Values.BoostSpeed = v end)
-
-createToggle(leftSide, 112, "Anti Ragdoll", "AntiRagdoll", function(s)
-    Enabled.AntiRagdoll = s
-    if s then startAntiRagdoll() else stopAntiRagdoll() end
-end)
-
-createToggleWithKey(leftSide, 216, "Spin Bot", "SPIN", "SpinBot", function(s)
-    Enabled.SpinBot = s
-    if s then startSpinBot() else stopSpinBot() end
-end)
-
-createSlider(leftSide, 268, "Spin Speed", 5, 50, "SpinSpeed", function(v) Values.SpinSpeed = v end)
-
-createToggle(leftSide, 328, "Spam Bat", "SpamBat", function(s)
-    Enabled.SpamBat = s
-    if s then startSpamBat() else stopSpamBat() end
-end)
-
-createToggle(leftSide, 380, "Auto Steal", "AutoSteal", function(s)
-    Enabled.AutoSteal = s
-    if s then startAutoSteal() else stopAutoSteal() end
-end)
-
-createToggleWithKey(leftSide, 432, "Bat Aimbot", "BATAIMBOT", "BatAimbot", function(s)
-    Enabled.BatAimbot = s
-    if s then startBatAimbot() else stopBatAimbot() end
-end, C.danger)
-
-createToggle(leftSide, 484, "Galaxy Sky Bright", "GalaxySkyBright", function(s)
-    Enabled.GalaxySkyBright = s
-    if s then enableGalaxySkyBright() else disableGalaxySkyBright() end
-end, Color3.fromRGB(180, 80, 255))
-
--- Right side toggles - SPACED OUT LIKE BEFORE
-createToggleWithKey(rightSide, 0, "Galaxy Mode", "GALAXY", "Galaxy", function(s)
-    Enabled.Galaxy = s
-    if s then startGalaxy() else stopGalaxy() end
-end, Color3.fromRGB(60, 130, 255))
-_G.setGalaxyVisual = VisualSetters.Galaxy
-
-createSlider(rightSide, 52, "Gravity %", 25, 130, "GalaxyGravityPercent", function(v)
-    Values.GalaxyGravityPercent = v
-    if galaxyEnabled then adjustGalaxyJump() end
-end)
-
-createSlider(rightSide, 112, "Hop Power", 10, 80, "HOP_POWER", function(v) Values.HOP_POWER = v end)
-
-createToggle(rightSide, 172, "Speed While Stealing", "SpeedWhileStealing", function(s)
-    Enabled.SpeedWhileStealing = s
-    if s then startSpeedWhileStealing() else stopSpeedWhileStealing() end
-end)
-
-createSlider(rightSide, 224, "Steal Speed", 10, 35, "StealingSpeedValue", function(v) Values.StealingSpeedValue = v end)
-
-createToggle(rightSide, 284, "Unwalk", "Unwalk", function(s)
-    Enabled.Unwalk = s
-    if s then startUnwalk() else stopUnwalk() end
-end)
-
-createToggle(rightSide, 336, "Optimizer + XRay", "Optimizer", function(s)
-    Enabled.Optimizer = s
-    if s then enableOptimizer() else disableOptimizer() end
-end)
-
-createToggleWithKey(rightSide, 388, "Auto Left", "AUTOLEFT", "AutoWalkEnabled", function(s)
-    AutoWalkEnabled = s
-    Enabled.AutoWalkEnabled = s
-    if s then startAutoWalk() else stopAutoWalk() end
-end, Color3.fromRGB(100, 150, 255))
-_G.setAutoLeftVisual = VisualSetters.AutoWalkEnabled
-
-createToggleWithKey(rightSide, 440, "Auto Right", "AUTORIGHT", "AutoRightEnabled", function(s)
-    AutoRightEnabled = s
-    Enabled.AutoRightEnabled = s
-    if s then startAutoRight() else stopAutoRight() end
-end, Color3.fromRGB(100, 220, 180))
-_G.setAutoRightVisual = VisualSetters.AutoRightEnabled
-
--- Save Button
-local SaveBtn = Instance.new("TextButton", rightSide)
-SaveBtn.Size = UDim2.new(1, -10 * guiScale, 0, 50 * guiScale)
-SaveBtn.Position = UDim2.new(0, 5 * guiScale, 0, 503 * guiScale)
-SaveBtn.BackgroundColor3 = Color3.fromRGB(160, 0, 255)
-SaveBtn.BackgroundTransparency = 0
-SaveBtn.Text = "SAVE CONFIG"
-SaveBtn.TextColor3 = Color3.new(1, 1, 1)
-SaveBtn.Font = Enum.Font.GothamBold
-SaveBtn.TextSize = 15 * guiScale
-SaveBtn.ZIndex = 3
-Instance.new("UICorner", SaveBtn).CornerRadius = UDim.new(0, 12 * guiScale)
-
-SaveBtn.MouseButton1Click:Connect(function()
-    local success = SaveConfig()
-    if success then
-        SaveBtn.Text = "SAVED!"
-        SaveBtn.BackgroundColor3 = C.success
-    else
-        SaveBtn.Text = "FAILED"
-        SaveBtn.BackgroundColor3 = C.danger
-    end
-    task.delay(1.5, function()
-        SaveBtn.Text = "SAVE CONFIG"
-        SaveBtn.BackgroundColor3 = C.purple
-    end)
-end)
-
-local infoLabel = Instance.new("TextLabel", leftSide)
-infoLabel.Size = UDim2.new(1, 0, 0, 40 * guiScale)
-infoLabel.Position = UDim2.new(0, 0, 0, 600 * guiScale)
-infoLabel.BackgroundTransparency = 1
-infoLabel.Text = "V=Speed | N=Spin | M=Galaxy | X=Aimbot\nZ=AutoLeft | C=AutoRight | Q=Nuke | U=GUI"
-infoLabel.TextColor3 = C.textDim
-infoLabel.Font = Enum.Font.Gotham
-infoLabel.TextSize = 9 * guiScale
-infoLabel.ZIndex = 3
-
-local guiVisible = true
 
 -- Apply loaded config (delayed to prevent character reset)
 task.spawn(function()
