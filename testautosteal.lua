@@ -2286,7 +2286,7 @@ createToggle(leftSide, 560, "Dodge (Left-Right)", "Dodge", function(s)
         runDodge() 
     end
 end)
-createToggle(leftSide, 170, "Galaxy Vertical Dodge", "VerticalDodge", function(s)
+createToggleWithKey(leftSide, 170, "Vertical Dodge", "VERTICALDODGE", "VerticalDodge", function(s)
     Enabled.VerticalDodge = s
     if s then runVerticalDodge() end
 end)
