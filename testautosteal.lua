@@ -56,6 +56,7 @@ local Enabled = {
     GalaxySkyBright = false,
     AutoWalkEnabled = false,
     AutoRightEnabled = false,
+    Dodge = false,
     ScriptUserESP = true
 }
 
@@ -68,6 +69,7 @@ local Values = {
     DEFAULT_GRAVITY = 196.2,
     GalaxyGravityPercent = 70,
     HOP_POWER = 35,
+     DodgeDistance = 10,
     HOP_COOLDOWN = 0.08
 }
 
@@ -219,6 +221,28 @@ local function startSpamBat()
         if now - lastBatSwing < BAT_SWING_COOLDOWN then return end
         lastBatSwing = now
         pcall(function() bat:Activate() end)
+    end)
+end
+    local function runDodge()
+    task.spawn(function()
+        local direction = 1
+        while Enabled.Dodge do
+            local char = Player.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                -- Mișcare laterală calculată pe RightVector (stânga/dreapta față de player)
+                local targetPos = hrp.Position + (hrp.CFrame.RightVector * (Values.DodgeDistance * direction))
+                
+                local tween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {CFrame = CFrame.new(targetPos) * hrp.CFrame.Rotation})
+                tween:Play()
+                tween.Completed:Wait()
+                
+                direction = direction * -1
+            else
+                task.wait(0.1)
+            end
+            task.wait(0.05)
+        end
     end)
 end
 
@@ -2216,6 +2240,20 @@ createToggleWithKey(rightSide, 440, "Auto Right", "AUTORIGHT", "AutoRightEnabled
 end, Color3.fromRGB(100, 220, 180))
 _G.setAutoRightVisual = VisualSetters.AutoRightEnabled
 
+-- Slider pentru distanța de mișcare
+createSlider(rightSide, 230, "Dodge Distance", 5, 40, "DodgeDistance", function(v) 
+    Values.DodgeDistance = v 
+end)
+
+-- Toggle pentru activare/dezactivare
+createToggle(rightSide, 260, "Dodge (Left-Right)", "Dodge", function(s)
+    Enabled.Dodge = s
+    if s then 
+        runDodge() 
+    end
+end)
+
+    
 -- Save Button
 local SaveBtn = Instance.new("TextButton", rightSide)
 SaveBtn.Size = UDim2.new(1, -10 * guiScale, 0, 50 * guiScale)
