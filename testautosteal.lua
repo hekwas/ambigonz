@@ -57,6 +57,7 @@ local Enabled = {
     AutoWalkEnabled = false,
     AutoRightEnabled = false,
     Dodge = false,
+    VerticalDodge = false,
     ScriptUserESP = true
 }
 
@@ -80,7 +81,8 @@ local KEYBINDS = {
     BATAIMBOT = Enum.KeyCode.X,
     NUKE = Enum.KeyCode.Q,
     AUTOLEFT = Enum.KeyCode.Z,
-    AUTORIGHT = Enum.KeyCode.C
+    AUTORIGHT = Enum.KeyCode.C,
+    VERTICALDODGE = Enum.KeyCode.F 
 }
 
 -- Load Config FIRST before anything else
@@ -223,29 +225,61 @@ local function startSpamBat()
         pcall(function() bat:Activate() end)
     end)
 end
-    local function runDodge()
+
+ local function runVerticalDodge()
     task.spawn(function()
-        local direction = 1
-        while Enabled.Dodge do
+        local upDirection = 1
+        while Enabled.VerticalDodge do
             local char = Player.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                -- Mișcare laterală calculată pe RightVector (stânga/dreapta față de player)
-                local targetPos = hrp.Position + (hrp.CFrame.RightVector * (Values.DodgeDistance * direction))
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+            -- Verificăm dacă e activ Galaxy Mode și dacă playerul e viu
+            if hrp and hum and hum.Health > 0 and Enabled.Galaxy then
+                -- Verificăm dacă suntem în aer (FloorMaterial e Air)
+                if hum.FloorMaterial == Enum.Material.Air then
+                    -- Aplicăm viteză pe axa Y (sus/jos)
+                    -- Folosim o valoare moderată (25-35) ca să nu zbori de pe hartă
+                    hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 35 * upDirection, hrp.AssemblyLinearVelocity.Z)
+                    
+                    upDirection = upDirection * -1 -- Schimbă sensul
+                    task.wait(0.25) -- Durata oscilației
+                else
+                    -- Dacă suntem pe sol, dăm un mic jump automat ca să pornim schemele
+                    hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 30, hrp.AssemblyLinearVelocity.Z)
+                    task.wait(0.5)
+                end
+            else
+                task.wait(0.5) -- Așteaptă dacă Galaxy e oprit
+            end
+            task.wait(0.1)
+        end
+    end)
+end
+local function runDodge()
+    task.spawn(function()
+        local direction = 1
+        while Enabled.Dodge and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") do
+            local hrp = Player.Character.HumanoidRootPart
+            local hum = Player.Character:FindFirstChildOfClass("Humanoid")
+            
+            if hrp and hum and hum.Health > 0 then
+                -- Folosim Velocity în loc de Tween pentru a evita detectarea CFrame
+                -- Înmulțim distanța cu 5 pentru a compensa frecarea cu solul
+                hrp.AssemblyLinearVelocity = hrp.CFrame.RightVector * (Values.DodgeDistance * 4 * direction)
                 
-                local tween = TweenService:Create(hrp, TweenInfo.new(0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {CFrame = CFrame.new(targetPos) * hrp.CFrame.Rotation})
-                tween:Play()
-                tween.Completed:Wait()
-                
+                -- Scurtă pauză pentru ca impulsul să aibă efect
+                task.wait(0.2) 
                 direction = direction * -1
             else
-                task.wait(0.1)
+                break -- Oprim dacă am murit
             end
-            task.wait(0.05)
+            task.wait(0.15) -- Timp de așteptare între sărituri
         end
     end)
 end
 
+    
 local function stopSpamBat()
     if Connections.spamBat then
         Connections.spamBat:Disconnect()
@@ -2241,16 +2275,20 @@ end, Color3.fromRGB(100, 220, 180))
 _G.setAutoRightVisual = VisualSetters.AutoRightEnabled
 
 -- Slider pentru distanța de mișcare
-createSlider(rightSide, 230, "Dodge Distance", 5, 40, "DodgeDistance", function(v) 
+createSlider(leftSide, 520, "Dodge Distance", 5, 40, "DodgeDistance", function(v) 
     Values.DodgeDistance = v 
 end)
 
 -- Toggle pentru activare/dezactivare
-createToggle(rightSide, 260, "Dodge (Left-Right)", "Dodge", function(s)
+createToggle(leftSide, 560, "Dodge (Left-Right)", "Dodge", function(s)
     Enabled.Dodge = s
     if s then 
         runDodge() 
     end
+end)
+createToggle(leftSide, 170, "Galaxy Vertical Dodge", "VerticalDodge", function(s)
+    Enabled.VerticalDodge = s
+    if s then runVerticalDodge() end
 end)
 
     
@@ -2342,6 +2380,7 @@ task.spawn(function()
     if Enabled.Unwalk then startUnwalk() end
     if Enabled.AutoWalkEnabled then AutoWalkEnabled = true startAutoWalk() end
     if Enabled.AutoRightEnabled then AutoRightEnabled = true startAutoRight() end
+    If Enabled.VerticalDodge then VerticalDodge = true runVerticalDodge() end
     
     if configLoaded then
         print("[22S] Config applied!")
@@ -2379,6 +2418,12 @@ UserInputService.InputBegan:Connect(function(input, gpe)
         if VisualSetters.SpeedBoost then VisualSetters.SpeedBoost(Enabled.SpeedBoost) end
         if Enabled.SpeedBoost then startSpeedBoost() else stopSpeedBoost() end
     end
+             -- Keybind pentru Vertical Dodge (Sus-Jos)
+    if input.KeyCode == KEYBINDS.VERTICALDODGE then
+        Enabled.VerticalDodge = not Enabled.VerticalDodge
+        if VisualSetters.VerticalDodge then VisualSetters.VerticalDodge(Enabled.VerticalDodge) end
+        if Enabled.VerticalDodge then runVerticalDodge() end
+    end
     
     if input.KeyCode == KEYBINDS.SPIN then
         Enabled.SpinBot = not Enabled.SpinBot
@@ -2391,6 +2436,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
         if VisualSetters.Galaxy then VisualSetters.Galaxy(Enabled.Galaxy) end
         if Enabled.Galaxy then startGalaxy() else stopGalaxy() end
     end
+
     
     if input.KeyCode == KEYBINDS.BATAIMBOT then
         Enabled.BatAimbot = not Enabled.BatAimbot
@@ -2431,6 +2477,7 @@ Player.CharacterAdded:Connect(function()
     if Enabled.SpamBat then stopSpamBat() task.wait(0.1) startSpamBat() end
     if Enabled.BatAimbot then stopBatAimbot() task.wait(0.1) startBatAimbot() end
     if Enabled.Unwalk then startUnwalk() end
+
 end)
 
 print("22S DUELS - BLUE GALAXY ESP EDITION Loaded!")
