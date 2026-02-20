@@ -2380,7 +2380,7 @@ task.spawn(function()
     if Enabled.Unwalk then startUnwalk() end
     if Enabled.AutoWalkEnabled then AutoWalkEnabled = true startAutoWalk() end
     if Enabled.AutoRightEnabled then AutoRightEnabled = true startAutoRight() end
-    If Enabled.VerticalDodge then VerticalDodge = true runVerticalDodge() end
+    if Enabled.VerticalDodge then VerticalDodge = true runVerticalDodge() end
     
     if configLoaded then
         print("[22S] Config applied!")
